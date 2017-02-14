@@ -44,6 +44,7 @@ public:
 	GLfloat boundingSphereRadius;
 	vec4 boundingSphereColour;
 	GLuint collidingWith;
+	vec4 centroid;
 
 	// AABB Variables
 	GLfloat xMin, xMax, yMin, yMax, zMin, zMax;
@@ -53,12 +54,15 @@ public:
 
 	GLfloat scaleFactor;
 
+	vec4 meshColour;
+
 	RigidBody();
 	RigidBody(Mesh rigidBodyMesh, GLfloat scaleFactor);
 	RigidBody(int vertex_count, vector<float> vertex_positions);
 	~RigidBody();
-	void addBoundingSphere(Mesh boundingSphere, vec4 colour);
 	GLfloat calculateBoundingSphereRadius();
+	vec4 getCentroid();
+	void addBoundingSphere(Mesh boundingSphere, vec4 colour);
 	void computeMassInertia(bool bodyCoords);
 	void drawMesh(mat4 view, mat4 projection, vec4 viewPosition);
 	void drawBoundingSphere(mat4 view, mat4 projection);
@@ -98,6 +102,8 @@ RigidBody::RigidBody()
 	this->zMax = 0.0f;
 
 	this->collisionAABB = false;
+
+	this->meshColour = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 }
 
 RigidBody::RigidBody(Mesh rigidBodyMesh, GLfloat scaleFactor = 1.0f)
@@ -156,6 +162,10 @@ RigidBody::RigidBody(Mesh rigidBodyMesh, GLfloat scaleFactor = 1.0f)
 	this->zMax = 0.0f;
 
 	this->collisionAABB = false;
+
+	this->meshColour = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+
+	this->centroid = getCentroid();
 }
 
 RigidBody::RigidBody(int vertex_count, vector<float> vertex_positions)
@@ -207,6 +217,10 @@ RigidBody::RigidBody(int vertex_count, vector<float> vertex_positions)
 	this->zMax = 0.0f;
 
 	this->collisionAABB = false;
+
+	this->meshColour = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+
+	this->centroid = getCentroid();
 }
 
 RigidBody::~RigidBody()
@@ -224,10 +238,20 @@ GLfloat RigidBody::calculateBoundingSphereRadius()
 	GLfloat max = 0.0f;
 	for (GLuint i = 0; i < this->numPoints; i++)
 	{
-		if (getDistance(this->worldVertices[i], this->bodyCOM) > max)
-			max = getDistance(this->worldVertices[i], this->bodyCOM);
+		if (getDistance(this->worldVertices[i], this->centroid) > max)
+			max = getDistance(this->worldVertices[i], this->centroid);
 	}
 	return max;
+}
+
+vec4 RigidBody::getCentroid()
+{
+	vec4 sum = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+	for (GLuint i = 0; i < this->numPoints; i++)
+	{
+		sum += this->worldVertices[i];
+	}
+	return sum/this->numPoints;
 }
 
 // Adapted from:
@@ -427,7 +451,7 @@ void RigidBody::drawMesh(mat4 view, mat4 projection, vec4 viewPosition)
 	mat4 objectModel = scale(identity_mat4(), vec3(this->scaleFactor, this->scaleFactor, this->scaleFactor));
 	objectModel = this->rotation * objectModel;
 	objectModel = translate(objectModel, this->position);
-	rigidBodyMesh.drawMesh(view, projection, objectModel, vec4(0.0f, 0.0f, 0.0f, 0.0f), viewPosition);
+	rigidBodyMesh.drawMesh(view, projection, objectModel, this->meshColour, viewPosition);
 }
 
 void RigidBody::drawBoundingSphere(mat4 view, mat4 projection)

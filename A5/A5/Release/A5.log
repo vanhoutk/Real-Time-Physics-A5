@@ -12,30 +12,19 @@ e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - comput
 e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - computers\cs7057 - real-time physics\assignments\code\real-time-physics-a5\a5\a5\Antons_maths_funcs.h(814): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - computers\cs7057 - real-time physics\assignments\code\real-time-physics-a5\a5\a5\Camera.h(129): warning C4244: 'return': conversion from 'double' to 'GLfloat', possible loss of data
 e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - computers\cs7057 - real-time physics\assignments\code\real-time-physics-a5\a5\a5\PlaneRotation.h(16): warning C4244: 'return': conversion from 'double' to 'GLfloat', possible loss of data
-e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - computers\cs7057 - real-time physics\assignments\code\real-time-physics-a5\a5\a5\RigidBody.h(291): warning C4305: 'initializing': truncation from 'double' to 'float'
-e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - computers\cs7057 - real-time physics\assignments\code\real-time-physics-a5\a5\a5\RigidBody.h(292): warning C4305: 'initializing': truncation from 'double' to 'float'
-e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - computers\cs7057 - real-time physics\assignments\code\real-time-physics-a5\a5\a5\RigidBody.h(299): warning C4018: '<': signed/unsigned mismatch
-main.cpp(268): warning C4018: '<': signed/unsigned mismatch
-main.cpp(282): warning C4018: '<': signed/unsigned mismatch
-main.cpp(497): warning C4244: '=': conversion from 'int' to 'GLfloat', possible loss of data
-main.cpp(498): warning C4244: '=': conversion from 'int' to 'GLfloat', possible loss of data
-main.cpp(505): warning C4244: '=': conversion from 'int' to 'GLfloat', possible loss of data
-main.cpp(506): warning C4244: '=': conversion from 'int' to 'GLfloat', possible loss of data
-main.cpp(520): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
-  text.cpp
-text.cpp(74): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-text.cpp(268): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-text.cpp(269): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-text.cpp(298): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-text.cpp(300): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-text.cpp(301): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-text.cpp(302): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-text.cpp(304): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-text.cpp(305): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-text.cpp(306): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-text.cpp(307): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-text.cpp(309): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - computers\cs7057 - real-time physics\assignments\code\real-time-physics-a5\a5\a5\RigidBody.h(299): warning C4305: 'initializing': truncation from 'double' to 'float'
+e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - computers\cs7057 - real-time physics\assignments\code\real-time-physics-a5\a5\a5\RigidBody.h(300): warning C4305: 'initializing': truncation from 'double' to 'float'
+e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - computers\cs7057 - real-time physics\assignments\code\real-time-physics-a5\a5\a5\RigidBody.h(307): warning C4018: '<': signed/unsigned mismatch
+main.cpp(285): warning C4018: '<': signed/unsigned mismatch
+main.cpp(299): warning C4018: '<': signed/unsigned mismatch
+main.cpp(535): warning C4244: '=': conversion from 'int' to 'GLfloat', possible loss of data
+main.cpp(536): warning C4244: '=': conversion from 'int' to 'GLfloat', possible loss of data
+main.cpp(543): warning C4244: '=': conversion from 'int' to 'GLfloat', possible loss of data
+main.cpp(544): warning C4244: '=': conversion from 'int' to 'GLfloat', possible loss of data
+main.cpp(558): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
   Generating code
-  All 882 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  25 of 890 functions ( 2.8%) were compiled, the rest were copied from previous compilation.
+    2 functions were new in current compilation
+    1 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   A5.vcxproj -> E:\Users\Kris\Documents\College\Fifth Year OneDrive\OneDrive\Fifth Year - Computers\CS7057 - Real-Time Physics\Assignments\Code\Real-Time-Physics-A5\A5\Release\A5.exe

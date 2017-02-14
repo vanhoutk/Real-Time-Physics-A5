@@ -167,6 +167,12 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="text.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\Shaders\LightFragmentShader.txt" />
+    <Text Include="..\Shaders\LightTextureFragmentShader.txt" />
+    <Text Include="..\Shaders\LightTextureVertexShader.txt" />
+    <Text Include="..\Shaders\LightVertexShader.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

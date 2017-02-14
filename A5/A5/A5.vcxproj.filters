@@ -54,4 +54,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\Shaders\LightFragmentShader.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\Shaders\LightVertexShader.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\Shaders\LightTextureFragmentShader.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\Shaders\LightTextureVertexShader.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+  </ItemGroup>
 </Project>

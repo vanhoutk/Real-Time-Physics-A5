@@ -53,18 +53,25 @@ GLfloat friction = 0.05f;
 GLfloat lastX = 400, lastY = 300;
 GLfloat resilience = 0.98f;
 GLuint mode = AABB;
-const GLuint numRigidBodies = 15;
+const GLuint numRigidBodies = 1;
 GLuint shaderProgramID[NUM_SHADERS];
 int screenWidth = 1000;
 int screenHeight = 800;
 int stringIDs[3];
 //Model planeModel;
-Mesh asteroid, boundingBox, sphereMesh;
+Mesh asteroid, boundingBox, sphereMesh, pyramidMesh;
 vec4 red = vec4(1.0f, 0.0f, 0.0f, 1.0f);
 vec4 green = vec4(0.0f, 1.0f, 0.0f, 1.0f);
 vec4 yAxis = vec4(0.0f, 1.0f, 0.0f, 0.0f);
 vec4 xAxis = vec4(1.0f, 0.0f, 0.0f, 0.0f);
 vec4 zAxis = vec4(0.0f, 0.0f, 1.0f, 0.0f);
+
+vec4 gravity = vec4(0.0f, -9.81f, 0.0f, 0.0f);
+
+vec3 point1 = vec3(-1.0f, -1.0f, 0.577f);
+vec3 point2 = vec3(1.0f, -1.0f, 0.577f);
+vec3 point3 = vec3(0.0f, 1.0f, 0.0f);
+vec3 point4 = vec3(0.0f, -1.0f, -1.166f);
 vector<RigidBody> rigidbodies;
 
 // | Resource Locations
@@ -173,14 +180,39 @@ void processInput()
 		exit(0);
 }
 
+float calculateImpulse(RigidBody &rigidBody, vec4 contactPlaneNormal, vec4 contactPoint)
+{
+	vec4 pA_dot = rigidBody.velocity + cross(rigidBody.angularVelocity, (contactPoint - (rigidBody.bodyCOM + rigidBody.position)));
+	//vec4 pB_dot = vec4(0.0f, 0.0f, 0.0f, 0.0f); // Unmoving plane
+	//vec4 pA_pB = pA_dot - pB_dot;
+	float v_relative = dot(vec3(contactPlaneNormal.v[0], contactPlaneNormal.v[1], contactPlaneNormal.v[2]), vec3(pA_dot.v[0], pA_dot.v[1], pA_dot.v[2]));
+	
+	float mA_inv = 1 / rigidBody.mass;
+
+	vec4 rA = contactPoint - (rigidBody.bodyCOM + rigidBody.position);
+	vec4 rACrossN = cross(rA, contactPlaneNormal);
+	vec4 rACrossNIinv = rigidBody.Iinv * rACrossN;
+	float rACrossN2 = dot(rACrossNIinv, rACrossN);
+
+	float j = -(1 + resilience) * v_relative/mA_inv + rACrossN2;
+	return j;
+}
+
 void checkPlaneCollisions(RigidBody &rigidBody)
 {
-	if (pointToPlane(rigidBody.position, yAxis, (yAxis * -1.0f)) < rigidBody.boundingSphereRadius)
+	// Ground plane
+	vec4 closestPoint = closestPointOnPlane(rigidBody.position, yAxis, (yAxis * -1.0f));
+	if (pointToPyramidVoronoi(closestPoint, rigidBody.worldVertices[0], rigidBody.worldVertices[1], rigidBody.worldVertices[2], rigidBody.worldVertices[3]) < 0.001f)
 	{
-		vec4 velocityNormal = yAxis * (dot(rigidBody.velocity, yAxis));
-		vec4 velocityTangent = rigidBody.velocity - velocityNormal;
-		rigidBody.linearMomentum = ((velocityTangent * (1 - friction)) - (velocityNormal * resilience)) * rigidBody.mass;
-		rigidBody.position -= yAxis * (2 * (dot((rigidBody.position - (yAxis * -1.0f) - vec4(0.0f, rigidBody.boundingSphereRadius, 0.0f, 0.0f)), yAxis)));
+		vec4 contactPoint = closestPointOnPyramidVoronoi(closestPoint, rigidBody.worldVertices[0], rigidBody.worldVertices[1], rigidBody.worldVertices[2], rigidBody.worldVertices[3]);
+		float impulseMagnitude = calculateImpulse(rigidBody, yAxis, contactPoint);
+		rigidBody.force += yAxis * impulseMagnitude;
+		rigidBody.torque = getTorque(yAxis * impulseMagnitude, rigidBody.bodyCOM + rigidBody.position, contactPoint);
+		
+		//vec4 velocityNormal = yAxis * (dot(rigidBody.velocity, yAxis));
+		//vec4 velocityTangent = rigidBody.velocity - velocityNormal;
+		//rigidBody.linearMomentum = ((velocityTangent * (1 - friction)) - (velocityNormal * resilience)) * rigidBody.mass;
+		//rigidBody.position -= yAxis * (2 * (dot((rigidBody.position - (yAxis * -1.0f) - vec4(0.0f, rigidBody.boundingSphereRadius, 0.0f, 0.0f)), yAxis)));
 	}
 	if (pointToPlane(rigidBody.position, (yAxis * -1), (yAxis * 1.0f)) < rigidBody.boundingSphereRadius)
 	{
@@ -219,18 +251,32 @@ void checkPlaneCollisions(RigidBody &rigidBody)
 	}
 }
 
+void computeForcesAndTorque(RigidBody &rigidBody)
+{
+	// Clear Forces
+	rigidBody.force = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+	rigidBody.torque = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+
+	// Apply Gravity
+	rigidBody.force += gravity * 0.1f * rigidBody.mass;
+
+	// Check for collisions
+	checkPlaneCollisions(rigidBody);
+
+}
+
 void updateRigidBodies()
 {
 	for (GLuint i = 0; i < numRigidBodies; i++)
 	{
 		RigidBody &rigidBody = rigidbodies[i];
 		// Might change this to user input
-		//computeForcesAndTorque();
+		computeForcesAndTorque(rigidBody);
 
 		rigidBody.position += rigidBody.velocity * deltaTime;
 
 		// Check for collision
-		checkPlaneCollisions(rigidBody);
+		//checkPlaneCollisions(rigidBody);
 
 		versor omega;
 		omega.q[0] = 0.0f;
@@ -385,12 +431,12 @@ void initialiseRigidBodies()
 	for (GLuint i = 0; i < numRigidBodies; i++)
 	{
 		RigidBody &rigidBody = rigidbodies[i];
-		GLfloat randomX1 = ((rand() % 10) - 5) / 100000.0f;
-		GLfloat randomY1 = ((rand() % 10) - 5) / 100000.0f;
-		GLfloat randomZ1 = ((rand() % 10) - 5) / 100000.0f;
-		GLfloat randomX2 = ((rand() % 100) - 50) / 50000.0f;
-		GLfloat randomY2 = ((rand() % 100) - 50) / 50000.0f;
-		GLfloat randomZ2 = ((rand() % 100) - 50) / 50000.0f;
+		GLfloat randomX1 = ((rand() % 10) - 5) / 500000.0f;
+		GLfloat randomY1 = ((rand() % 10) - 5) / 500000.0f;
+		GLfloat randomZ1 = ((rand() % 10) - 5) / 500000.0f;
+		GLfloat randomX2 = ((rand() % 100) - 50) / 100000.0f;
+		GLfloat randomY2 = ((rand() % 100) - 50) / 100000.0f;
+		GLfloat randomZ2 = ((rand() % 100) - 50) / 100000.0f;
 		rigidBody.angularMomentum = vec4(randomX1, randomY1, randomZ1, 0.0f);
 		rigidBody.linearMomentum = vec4(randomX2, randomY2, randomZ2, 0.0f);
 
@@ -418,6 +464,23 @@ void init()
 		shaderProgramID[i] = CompileShaders(vertexShaderNames[i], fragmentShaderNames[i]);
 	}
 
+	GLfloat pyramid_vertices[] = {
+		point1.v[0], point1.v[1], point1.v[2],
+		point2.v[0], point2.v[1], point2.v[2],
+		point3.v[0], point3.v[1], point3.v[2],
+
+		point1.v[0], point1.v[1], point1.v[2],
+		point4.v[0], point4.v[1], point4.v[2],
+		point3.v[0], point3.v[1], point3.v[2],
+
+		point4.v[0], point4.v[1], point4.v[2],
+		point2.v[0], point2.v[1], point2.v[2],
+		point3.v[0], point3.v[1], point3.v[2],
+
+		point1.v[0], point1.v[1], point1.v[2],
+		point4.v[0], point4.v[1], point4.v[2],
+		point2.v[0], point2.v[1], point2.v[2]
+	};
 
 	GLfloat bounding_box_vertices[] = {
 		1.0f, 1.0f, 1.0f,
@@ -441,6 +504,9 @@ void init()
 		-1.0f, 1.0f, 1.0f
 	};
 
+	pyramidMesh = Mesh(&shaderProgramID[LIGHT_SHADER]);
+	pyramidMesh.generateObjectBufferMesh(pyramid_vertices, 12);
+
 	boundingBox = Mesh(&shaderProgramID[BASIC_COLOUR_SHADER]);
 	boundingBox.generateObjectBufferMesh(bounding_box_vertices, 16);
 
@@ -453,8 +519,9 @@ void init()
 	sphereMesh.generateObjectBufferMesh(meshFiles[SPHERE_MESH]);
 
 	//RigidBody rigidBody = RigidBody(asteroid.vertex_count, asteroid.vertex_positions);
-	RigidBody rigidBody = RigidBody(asteroid, 0.2f);
+	RigidBody rigidBody = RigidBody(pyramidMesh, 0.2f);
 	rigidBody.addBoundingSphere(sphereMesh, green);
+	rigidBody.meshColour = vec4(1.0f, 0.0f, 0.0f, 1.0f);
 	//rigidBody.scaleFactor = 0.2f;
 
 	for (GLuint i = 0; i < numRigidBodies; i++)
