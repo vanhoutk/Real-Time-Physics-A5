@@ -6,6 +6,22 @@
 #include "Antons_maths_funcs.h"
 #include "Distance.h"
 
+// Colours
+vec4 red = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+vec4 green = vec4(0.0f, 1.0f, 0.0f, 1.0f);
+
+// Plane axes
+vec4 yAxis = vec4(0.0f, 1.0f, 0.0f, 0.0f);
+vec4 xAxis = vec4(1.0f, 0.0f, 0.0f, 0.0f);
+vec4 zAxis = vec4(0.0f, 0.0f, 1.0f, 0.0f);
+
+// Parameters
+GLfloat deltaTime = 1.0f / 60.0f;
+GLfloat friction = 0.05f;
+GLfloat restitution = 0.5f;
+vec4 gravity = vec4(0.0f, -9.81f, 0.0f, 0.0f);
+
+#pragma region RIGIDBODY_CLASS
 class RigidBody {
 public:
 	// Constants
@@ -267,52 +283,6 @@ vec4 RigidBody::getCentroid()
 
 void RigidBody::computeMassInertia(bool bodyCoords)
 {
-	/*GLfloat testVertices[] =
-	{
-		// Positions          
-		-1.0f,  1.0f, -1.0f,
-		-1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-		1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-
-		-1.0f, -1.0f,  1.0f,
-		-1.0f, -1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f,  1.0f,
-		-1.0f, -1.0f,  1.0f,
-
-		1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f,  1.0f,
-		1.0f,  1.0f,  1.0f,
-		1.0f,  1.0f,  1.0f,
-		1.0f,  1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-
-		-1.0f, -1.0f,  1.0f,
-		-1.0f,  1.0f,  1.0f,
-		1.0f,  1.0f,  1.0f,
-		1.0f,  1.0f,  1.0f,
-		1.0f, -1.0f,  1.0f,
-		-1.0f, -1.0f,  1.0f,
-
-		-1.0f,  1.0f, -1.0f,
-		1.0f,  1.0f, -1.0f,
-		1.0f,  1.0f,  1.0f,
-		1.0f,  1.0f,  1.0f,
-		-1.0f,  1.0f,  1.0f,
-		-1.0f,  1.0f, -1.0f,
-
-		-1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f,  1.0f,
-		1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f,  1.0f,
-		1.0f, -1.0f,  1.0f
-	};*/
-
 	float oneDiv6 = (1.0f / 6.0f);
 	float oneDiv24 = (1.0f / 24.0f);
 	float oneDiv60 = (1.0 / 60.0);
@@ -326,9 +296,6 @@ void RigidBody::computeMassInertia(bool bodyCoords)
 	for (int i = 0; i < numTriangles; ++i)
 	{
 		// Get vertices of triangle i.
-		//vec3 v0 = vec3(testVertices[index++], testVertices[index++], testVertices[index++]);
-		//vec3 v1 = vec3(testVertices[index++], testVertices[index++], testVertices[index++]);
-		//vec3 v2 = vec3(testVertices[index++], testVertices[index++], testVertices[index++]);
 		vec3 v0 = bodyVertices[index++];
 		vec3 v1 = bodyVertices[index++];
 		vec3 v2 = bodyVertices[index++];
@@ -493,60 +460,269 @@ void RigidBody::drawAABB(mat4 view, mat4 projection, GLuint* shaderID)
 	bounding_box.generateObjectBufferMesh(bounding_box_vertices, 16);
 	bounding_box.drawLine(view, projection, identity_mat4(), boundingBoxColour);
 
-	//delete bounding_box;
 	bounding_box.dispose();
-
-	//delete bounding_box_vertices;
 }
+#pragma endregion
 
-
-/*void multiplyQuat(versor &result, versor r, versor s)
+#pragma region COLLISION_RESPONSE
+float calculateImpulse(RigidBody &rbA, RigidBody &rbB, vec4 contactNormal, vec4 contactPoint)
 {
-	result.q[0] = s.q[0] * r.q[0] - s.q[1] * r.q[1] -
-		s.q[2] * r.q[2] - s.q[3] * r.q[3];
-	result.q[1] = s.q[0] * r.q[1] + s.q[1] * r.q[0] -
-		s.q[2] * r.q[3] + s.q[3] * r.q[2];
-	result.q[2] = s.q[0] * r.q[2] + s.q[1] * r.q[3] +
-		s.q[2] * r.q[0] - s.q[3] * r.q[1];
-	result.q[3] = s.q[0] * r.q[3] - s.q[1] * r.q[2] +
-		s.q[2] * r.q[1] + s.q[3] * r.q[0];
-	normalise(result); // Re-normalise
-}*/
+	vec4 pA_dot = rbA.velocity + cross(rbA.angularVelocity, (contactPoint - rbA.worldCOM));
+	vec4 pB_dot = rbB.velocity + cross(rbB.angularVelocity, (contactPoint - rbB.worldCOM));
+	vec4 pA_pB = pA_dot - pB_dot;
+	float v_relative = dot(vec3(contactNormal.v[0], contactNormal.v[1], contactNormal.v[2]), vec3(pA_pB.v[0], pA_pB.v[1], pA_pB.v[2]));
 
-float quatMagnitude(versor v)
+	if (v_relative >= 0.001f) // Moving away
+		return 0.0f;
+	else if (v_relative >= -0.001f) // Resting Contact
+	{
+		// TODO: Calculate resting contact impulse
+		return 0.0f;
+	}
+
+	// Colliding Contact
+	float numerator = -(1 + restitution) * v_relative;
+
+	float massA_inverse = 1 / rbA.mass;
+	float massB_inverse = 1 / rbB.mass;
+
+	vec4 rA = contactPoint - rbA.worldCOM;
+	vec4 term3_a = cross(rA, contactNormal);
+	vec4 term3_b = rbA.Iinv * term3_a;
+	vec3 term3_c = cross(vec3(term3_b.v[0], term3_b.v[1], term3_b.v[2]), vec3(rA.v[0], rA.v[1], rA.v[2]));
+	float term3 = dot(vec3(contactNormal.v[0], contactNormal.v[1], contactNormal.v[2]), term3_c);
+
+	vec4 rB = contactPoint - rbB.worldCOM;
+	vec4 term4_a = cross(rB, contactNormal);
+	vec4 term4_b = rbB.Iinv * term4_a;
+	vec3 term4_c = cross(vec3(term4_b.v[0], term4_b.v[1], term4_b.v[2]), vec3(rB.v[0], rB.v[1], rB.v[2]));
+	float term4 = dot(vec3(contactNormal.v[0], contactNormal.v[1], contactNormal.v[2]), term4_c);
+
+	float j = numerator / (massA_inverse + massB_inverse + term3 + term4);
+	return j;
+}
+
+float calculatePlaneImpulse(RigidBody &rigidBody, vec4 contactPlaneNormal, vec4 contactPoint)
 {
-	float sum = v.q[0] * v.q[0] + v.q[1] * v.q[1] + v.q[2] * v.q[2] + v.q[3] * v.q[3];
-	float result = sqrt(sum);
-	return result;
+	vec4 pA_dot = rigidBody.velocity + cross(rigidBody.angularVelocity, (contactPoint - rigidBody.worldCOM));
+	float v_relative = dot(vec3(contactPlaneNormal.v[0], contactPlaneNormal.v[1], contactPlaneNormal.v[2]), vec3(pA_dot.v[0], pA_dot.v[1], pA_dot.v[2]));
+
+	if (v_relative >= 0.001f) //Moving away
+		return 0.0f;
+	else if (v_relative >= -0.001f) // Resting Contact
+	{	
+		// TODO: Check if this is correct
+		return dot(contactPlaneNormal, rigidBody.force) * -1 * deltaTime;
+	}
+
+	// Colliding Contact
+
+	float numerator = -(1 + restitution) * v_relative;
+
+	float mass_inverse = 1 / rigidBody.mass;
+
+	vec4 rA = contactPoint - rigidBody.worldCOM;
+	vec4 term3_a = cross(rA, contactPlaneNormal);
+	vec4 term3_b = rigidBody.Iinv * term3_a;
+	vec3 term3_c = cross(vec3(term3_b.v[0], term3_b.v[1], term3_b.v[2]), vec3(rA.v[0], rA.v[1], rA.v[2]));
+	float term3 = dot(vec3(contactPlaneNormal.v[0], contactPlaneNormal.v[1], contactPlaneNormal.v[2]), term3_c);
+
+	float j = numerator / (mass_inverse + term3);
+	return j;
 }
 
-float vec4Magnitude(vec4 v)
+void checkPlaneCollisions(RigidBody &rigidBody)
 {
-	float sum = v.v[0] * v.v[0] + v.v[1] * v.v[1] + v.v[2] * v.v[2] + v.v[3] * v.v[3];
-	float result = sqrt(sum);
-	return result;
-}
+	// Add all of the plane normals
+	vector<vec4> plane_normals;
+	plane_normals.push_back(yAxis);
+	plane_normals.push_back(yAxis * -1);
+	plane_normals.push_back(xAxis);
+	plane_normals.push_back(xAxis * -1);
+	plane_normals.push_back(zAxis);
+	plane_normals.push_back(zAxis * -1);
 
-bool operator < (const vec4 &lhs, const vec4 &rhs) {
-	if (lhs.v[0] < rhs.v[0]) return true;
-	if (lhs.v[0] > rhs.v[0]) return false;
-	if (lhs.v[1] < rhs.v[1]) return true;
-	if (lhs.v[1] > rhs.v[1]) return false;
-	return (lhs.v[2] < rhs.v[2]);
-}
+	// Ground plane
+	// TODO: Need to generalise and optimise this
+	vec4 closestPoint = closestPointOnPlane(rigidBody.worldCOM, yAxis, (yAxis * -1.0f));
+	float pointToPyramid = pointToPyramidVoronoi(closestPoint, rigidBody.worldVertices[0], rigidBody.worldVertices[1], rigidBody.worldVertices[2], rigidBody.worldVertices[3]);
+	if (pointToPyramid < 0.001f)
+	{
+		vec4 contactPoint = closestPointOnPyramidVoronoi(closestPoint, rigidBody.worldVertices[0], rigidBody.worldVertices[1], rigidBody.worldVertices[2], rigidBody.worldVertices[3]);
+		float impulseMagnitude = calculatePlaneImpulse(rigidBody, yAxis, contactPoint);
+		rigidBody.force = (yAxis * impulseMagnitude);
+		//rigidBody.torque = getTorque(yAxis * impulseMagnitude, rigidBody.worldCOM, contactPoint);
 
-bool operator == (const vec4 &lhs, const vec4 &rhs) {
-	return (lhs.v[0] == rhs.v[0]) && (lhs.v[1] == rhs.v[1]) && (lhs.v[2] == rhs.v[2]);
-}
+		rigidBody.linearMomentum += rigidBody.force;
+		//rigidBody.angularMomentum += rigidBody.torque;
 
+		rigidBody.velocity += rigidBody.linearMomentum / rigidBody.mass;
+		//rigidBody.angularVelocity = rigidBody.Iinv * rigidBody.angularMomentum;
+	}
+}
+#pragma endregion
+
+#pragma region RIGIDBODY_UPDATE
 vec4 getTorque(vec4 force, vec4 position, vec4 point)
 {
 	vec4 pointToCOM = point - position;
-
-	//float cosAngle = dot(vec3(pointToCOM.v[0], pointToCOM.v[1], pointToCOM.v[2]), vec3(force.v[0], force.v[1], force.v[2])) / (vec4Magnitude(pointToCOM) * vec4Magnitude(force));
-	//cout << "cosAngle: " << cosAngle << endl;
-	//float angle = acos(cosAngle);
-	//cout << "Angle: " << angle << endl;
-	//cout << "sinAngle: " << sin(angle) << endl;
-	return cross(pointToCOM, force); // force * vec4Magnitude(pointToCOM) * sin(angle);
+	return cross(pointToCOM, force); 
 }
+
+void computeForcesAndTorque(RigidBody &rigidBody)
+{
+	// Clear Forces
+	rigidBody.force = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+	rigidBody.torque = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+
+	// Apply Gravity
+	rigidBody.force += gravity * 0.01f * rigidBody.mass;
+}
+
+
+void updateRigidBodies(GLuint numRigidBodies, vector<RigidBody> &rigidbodies)
+{
+	for (GLuint i = 0; i < numRigidBodies; i++)
+	{
+		RigidBody &rigidBody = rigidbodies[i];
+
+		computeForcesAndTorque(rigidBody);
+
+		rigidBody.position += rigidBody.velocity * deltaTime;
+
+		versor omega;
+		omega.q[0] = 0.0f;
+		omega.q[1] = rigidBody.angularVelocity.v[0];
+		omega.q[2] = rigidBody.angularVelocity.v[1];
+		omega.q[3] = rigidBody.angularVelocity.v[2];
+
+		versor angularVelocityQuat;
+		float avMag = quatMagnitude(omega);
+		angularVelocityQuat.q[0] = cos((avMag * deltaTime) / 2);
+		if (avMag > 0)
+		{
+			angularVelocityQuat.q[1] = (rigidBody.angularVelocity.v[0] / avMag) * sin((avMag * deltaTime) / 2);
+			angularVelocityQuat.q[2] = (rigidBody.angularVelocity.v[1] / avMag) * sin((avMag * deltaTime) / 2);
+			angularVelocityQuat.q[3] = (rigidBody.angularVelocity.v[2] / avMag) * sin((avMag * deltaTime) / 2);
+		}
+		else
+		{
+			angularVelocityQuat.q[1] = 0.0f;
+			angularVelocityQuat.q[2] = 0.0f;
+			angularVelocityQuat.q[3] = 0.0f;
+		}
+
+		multiplyQuat(rigidBody.orientation, angularVelocityQuat, rigidBody.orientation);
+
+		rigidBody.linearMomentum += rigidBody.force * deltaTime;
+		rigidBody.angularMomentum += rigidBody.torque * deltaTime;
+
+		rigidBody.velocity = rigidBody.linearMomentum / rigidBody.mass;
+		rigidBody.rotation = quat_to_mat4(normalise(rigidBody.orientation));
+		rigidBody.Iinv = rigidBody.rotation * rigidBody.IbodyInv * transpose(rigidBody.rotation);
+		rigidBody.angularVelocity = rigidBody.Iinv * rigidBody.angularMomentum;
+
+		// Update all world points
+		for (int i = 0; i < rigidBody.numPoints; i++)
+		{
+			rigidBody.worldVertices[i] = (rigidBody.rotation * rigidBody.initialWorldVertices[i]) + rigidBody.position;
+		}
+
+		rigidBody.worldCOM = (rigidBody.rotation * rigidBody.bodyCOM) + rigidBody.position;
+
+		checkPlaneCollisions(rigidBody);
+
+		if (mode == AABB)
+		{
+			rigidBody.xMin = rigidBody.worldVertices[0].v[0];
+			rigidBody.xMax = rigidBody.worldVertices[0].v[0];
+			rigidBody.yMin = rigidBody.worldVertices[0].v[1];
+			rigidBody.yMax = rigidBody.worldVertices[0].v[1];
+			rigidBody.zMin = rigidBody.worldVertices[0].v[2];
+			rigidBody.zMax = rigidBody.worldVertices[0].v[2];
+
+			for (int i = 1; i < rigidBody.numPoints; i++)
+			{
+				vec4 vertex = rigidBody.worldVertices[i];
+
+				if (vertex.v[0] < rigidBody.xMin)
+					rigidBody.xMin = vertex.v[0];
+				else if (vertex.v[0] > rigidBody.xMax)
+					rigidBody.xMax = vertex.v[0];
+
+				if (vertex.v[1] < rigidBody.yMin)
+					rigidBody.yMin = vertex.v[1];
+				else if (vertex.v[1] > rigidBody.yMax)
+					rigidBody.yMax = vertex.v[1];
+
+				if (vertex.v[2] < rigidBody.zMin)
+					rigidBody.zMin = vertex.v[2];
+				else if (vertex.v[2] > rigidBody.zMax)
+					rigidBody.zMax = vertex.v[2];
+			}
+		}
+
+		// Reset the colliding with counter
+		rigidBody.collidingWith = 0;
+	}
+}
+#pragma endregion
+
+#pragma region BROAD_PHASE_COLLISION_DETECTION
+void checkBoundingSphereCollisions(GLuint numRigidBodies, vector<RigidBody> &rigidbodies)
+{
+	for (GLuint i = 0; i < numRigidBodies; i++)
+	{
+		RigidBody &rb1 = rigidbodies[i];
+
+		for (GLuint j = i + 1; j < numRigidBodies; j++)
+		{
+			RigidBody &rb2 = rigidbodies[j];
+
+			if (getDistance(rb1.position, rb2.position) <= (rb1.boundingSphereRadius + rb2.boundingSphereRadius))
+			{
+				rb1.collidingWith++;
+				rb2.collidingWith++;
+				rb1.boundingSphereColour = red;
+				rb2.boundingSphereColour = red;
+			}
+		}
+
+		if (rb1.collidingWith == 0)
+		{
+			rb1.boundingSphereColour = green;
+		}
+	}
+}
+
+bool isColliding(const RigidBody& bdi, const RigidBody& cdi)
+{
+	if ((bdi.xMax < cdi.xMin || bdi.xMin > cdi.xMax)) return false;
+	if ((bdi.yMax < cdi.yMin || bdi.yMin > cdi.yMax)) return false;
+	if ((bdi.zMax < cdi.zMin || bdi.zMin > cdi.zMax)) return false;
+
+	return true;
+}
+
+void checkAABBCollisions(GLuint numRigidBodies, vector<RigidBody> &rigidbodies)
+{
+	vector<bool> m_collision(numRigidBodies, false);
+	for (int i = 0; i < numRigidBodies; i++)
+	{
+		for (int j = i + 1; j < numRigidBodies; j++)
+		{
+			if (isColliding(rigidbodies[i], rigidbodies[j]))
+			{
+				m_collision[i] = true;
+				m_collision[j] = true;
+			}
+		}
+	}
+
+	for (int k = 0; k < numRigidBodies; k++)
+	{
+		rigidbodies[k].collisionAABB = m_collision[k];
+		rigidbodies[k].boundingBoxColour = m_collision[k] ? red : green;
+	}
+}
+#pragma endregion

@@ -896,4 +896,31 @@ inline versor slerp(versor& q, versor& r, float t) {
 	return result;
 }
 
+// Added by Kris
+float vec4Magnitude(vec4 v)
+{
+	float sum = v.v[0] * v.v[0] + v.v[1] * v.v[1] + v.v[2] * v.v[2] + v.v[3] * v.v[3];
+	float result = sqrt(sum);
+	return result;
+}
+
+bool operator < (const vec4 &lhs, const vec4 &rhs) {
+	if (lhs.v[0] < rhs.v[0]) return true;
+	if (lhs.v[0] > rhs.v[0]) return false;
+	if (lhs.v[1] < rhs.v[1]) return true;
+	if (lhs.v[1] > rhs.v[1]) return false;
+	return (lhs.v[2] < rhs.v[2]);
+}
+
+bool operator == (const vec4 &lhs, const vec4 &rhs) {
+	return (lhs.v[0] == rhs.v[0]) && (lhs.v[1] == rhs.v[1]) && (lhs.v[2] == rhs.v[2]);
+}
+
+float quatMagnitude(versor v)
+{
+	float sum = v.q[0] * v.q[0] + v.q[1] * v.q[1] + v.q[2] * v.q[2] + v.q[3] * v.q[3];
+	float result = sqrt(sum);
+	return result;
+}
+
 #endif

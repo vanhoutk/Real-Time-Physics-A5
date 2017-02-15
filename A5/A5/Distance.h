@@ -5,6 +5,8 @@
 
 #include "Antons_maths_funcs.h"
 
+
+#pragma region VORONOI
 float getDistance(vec3 p1, vec3 p2)
 {
 	float x_sq = (p1.v[0] - p2.v[0]) * (p1.v[0] - p2.v[0]);
@@ -716,3 +718,5 @@ vec4 closestPointOnPyramidVoronoi(vec4 p0, vec4 p1, vec4 p2, vec4 p3, vec4 p4)
 		vec3(p4.v[0], p4.v[1], p4.v[2]));
 	return vec4(result.v[0], result.v[1], result.v[2], 0.0f);
 }
+#pragma endregion
+
