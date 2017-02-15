@@ -16,6 +16,7 @@ vec4 xAxis = vec4(1.0f, 0.0f, 0.0f, 0.0f);
 vec4 zAxis = vec4(0.0f, 0.0f, 1.0f, 0.0f);
 
 // Parameters
+enum Mode { BOUNDING_SPHERES, AABB };
 GLfloat deltaTime = 1.0f / 60.0f;
 GLfloat friction = 0.05f;
 GLfloat restitution = 0.5f;
@@ -61,7 +62,8 @@ public:
 	GLfloat boundingSphereRadius;
 	vec4 boundingSphereColour;
 	GLuint collidingWith;
-	vec4 centroid;
+	vec4 bodyCentroid;
+	vec4 worldCentroid;
 
 	// AABB Variables
 	GLfloat xMin, xMax, yMin, yMax, zMin, zMax;
@@ -183,7 +185,7 @@ RigidBody::RigidBody(Mesh rigidBodyMesh, GLfloat scaleFactor = 1.0f)
 
 	this->meshColour = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 
-	this->centroid = getCentroid();
+	this->bodyCentroid = getCentroid();
 }
 
 RigidBody::RigidBody(int vertex_count, vector<float> vertex_positions)
@@ -239,7 +241,7 @@ RigidBody::RigidBody(int vertex_count, vector<float> vertex_positions)
 
 	this->meshColour = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 
-	this->centroid = getCentroid();
+	this->bodyCentroid = getCentroid();
 }
 
 RigidBody::~RigidBody()
@@ -257,8 +259,8 @@ GLfloat RigidBody::calculateBoundingSphereRadius()
 	GLfloat max = 0.0f;
 	for (GLuint i = 0; i < this->numPoints; i++)
 	{
-		if (getDistance(this->worldVertices[i], this->centroid) > max)
-			max = getDistance(this->worldVertices[i], this->centroid);
+		if (getDistance(this->worldVertices[i], this->bodyCentroid) > max)
+			max = getDistance(this->worldVertices[i], this->bodyCentroid);
 	}
 	return max;
 }
@@ -464,6 +466,19 @@ void RigidBody::drawAABB(mat4 view, mat4 projection, GLuint* shaderID)
 }
 #pragma endregion
 
+// Functions
+float calculateImpulse(RigidBody &rbA, RigidBody &rbB, vec4 contactNormal, vec4 contactPoint);
+float calculatePlaneImpulse(RigidBody &rigidBody, vec4 contactPlaneNormal, vec4 contactPoint);
+void checkPlaneCollisions(RigidBody &rigidBody);
+
+vec4 getTorque(vec4 force, vec4 position, vec4 point);
+void computeForcesAndTorque(RigidBody &rigidBody);
+void updateRigidBodies(GLuint mode, GLuint numRigidBodies, vector<RigidBody> &rigidbodies);
+
+void checkBoundingSphereCollisions(GLuint numRigidBodies, vector<RigidBody> &rigidbodies);
+bool isColliding(const RigidBody& bdi, const RigidBody& cdi);
+void checkAABBCollisions(GLuint numRigidBodies, vector<RigidBody> &rigidbodies);
+
 #pragma region COLLISION_RESPONSE
 float calculateImpulse(RigidBody &rbA, RigidBody &rbB, vec4 contactNormal, vec4 contactPoint)
 {
@@ -542,9 +557,36 @@ void checkPlaneCollisions(RigidBody &rigidBody)
 	plane_normals.push_back(zAxis);
 	plane_normals.push_back(zAxis * -1);
 
+	for (int i = 0; i < 1 /*plane_normals.size()*/; i++)
+	{
+		if (pointToPlane(rigidBody.worldCentroid, plane_normals[i], (plane_normals[i] * -1)) < rigidBody.boundingSphereRadius)
+		{
+			rigidBody.force = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+			for (int j = 0; j < rigidBody.numPoints; j++)
+			{
+				float distanceToPlane = pointToPlane(rigidBody.worldVertices[j], plane_normals[i], (plane_normals[i] * -1));
+				if (distanceToPlane < 0.01f)
+				{
+					float impulseMagnitude = calculatePlaneImpulse(rigidBody, plane_normals[i], rigidBody.worldVertices[j]);
+					vec4 impulseForce = plane_normals[i] * impulseMagnitude;
+
+					rigidBody.force = impulseForce;
+					rigidBody.linearMomentum += rigidBody.force;
+					rigidBody.velocity += rigidBody.linearMomentum / rigidBody.mass;
+					//rigidBody.torque = getTorque(impulseForce, rigidBody.worldCOM, rigidBody.worldVertices[j]);
+
+					//rigidBody.angularMomentum += rigidBody.torque;
+
+					
+					//rigidBody.angularVelocity = rigidBody.Iinv * rigidBody.angularMomentum;
+				}
+			}
+		}
+	}
+
 	// Ground plane
 	// TODO: Need to generalise and optimise this
-	vec4 closestPoint = closestPointOnPlane(rigidBody.worldCOM, yAxis, (yAxis * -1.0f));
+	/*vec4 closestPoint = closestPointOnPlane(rigidBody.worldCOM, yAxis, (yAxis * -1.0f));
 	float pointToPyramid = pointToPyramidVoronoi(closestPoint, rigidBody.worldVertices[0], rigidBody.worldVertices[1], rigidBody.worldVertices[2], rigidBody.worldVertices[3]);
 	if (pointToPyramid < 0.001f)
 	{
@@ -558,7 +600,7 @@ void checkPlaneCollisions(RigidBody &rigidBody)
 
 		rigidBody.velocity += rigidBody.linearMomentum / rigidBody.mass;
 		//rigidBody.angularVelocity = rigidBody.Iinv * rigidBody.angularMomentum;
-	}
+	}*/
 }
 #pragma endregion
 
@@ -580,7 +622,7 @@ void computeForcesAndTorque(RigidBody &rigidBody)
 }
 
 
-void updateRigidBodies(GLuint numRigidBodies, vector<RigidBody> &rigidbodies)
+void updateRigidBodies(GLuint mode, GLuint numRigidBodies, vector<RigidBody> &rigidbodies)
 {
 	for (GLuint i = 0; i < numRigidBodies; i++)
 	{
@@ -629,6 +671,7 @@ void updateRigidBodies(GLuint numRigidBodies, vector<RigidBody> &rigidbodies)
 		}
 
 		rigidBody.worldCOM = (rigidBody.rotation * rigidBody.bodyCOM) + rigidBody.position;
+		rigidBody.worldCentroid = (rigidBody.rotation * rigidBody.bodyCentroid) + rigidBody.position;
 
 		checkPlaneCollisions(rigidBody);
 

@@ -44,7 +44,6 @@ bool keys[1024];
 bool pause = false;
 Camera camera(vec3(0.0f, 0.0f, 4.0f));
 enum Meshes { PLANE_MESH, ASTEROID_MESH, SPHERE_MESH };
-enum Mode { BOUNDING_SPHERES, AABB };
 enum Shaders { SKYBOX, BASIC_COLOUR_SHADER, BASIC_TEXTURE_SHADER, LIGHT_SHADER, LIGHT_TEXTURE_SHADER };
 enum Textures { PLANE_TEXTURE, ASTEROID_TEXTURE };
 GLfloat cameraSpeed = 0.005f;
@@ -167,7 +166,7 @@ void updateScene()
 
 	if (!pause)
 	{
-		updateRigidBodies(numRigidBodies, rigidbodies);
+		updateRigidBodies(mode, numRigidBodies, rigidbodies);
 
 		if (mode == BOUNDING_SPHERES)
 			checkBoundingSphereCollisions(numRigidBodies, rigidbodies);
