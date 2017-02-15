@@ -186,7 +186,8 @@ float calculateImpulse(RigidBody &rigidBody, vec4 contactPlaneNormal, vec4 conta
 	//vec4 pB_dot = vec4(0.0f, 0.0f, 0.0f, 0.0f); // Unmoving plane
 	//vec4 pA_pB = pA_dot - pB_dot;
 	float v_relative = dot(vec3(contactPlaneNormal.v[0], contactPlaneNormal.v[1], contactPlaneNormal.v[2]), vec3(pA_dot.v[0], pA_dot.v[1], pA_dot.v[2]));
-	
+	float numerator = -(1 + resilience) * v_relative;
+
 	float mA_inv = 1 / rigidBody.mass;
 
 	vec4 rA = contactPoint - (rigidBody.bodyCOM + rigidBody.position);
@@ -194,7 +195,7 @@ float calculateImpulse(RigidBody &rigidBody, vec4 contactPlaneNormal, vec4 conta
 	vec4 rACrossNIinv = rigidBody.Iinv * rACrossN;
 	float rACrossN2 = dot(rACrossNIinv, rACrossN);
 
-	float j = -(1 + resilience) * v_relative/mA_inv + rACrossN2;
+	float j = numerator/(mA_inv + rACrossN2);
 	return j;
 }
 
@@ -202,12 +203,12 @@ void checkPlaneCollisions(RigidBody &rigidBody)
 {
 	// Ground plane
 	vec4 closestPoint = closestPointOnPlane(rigidBody.position, yAxis, (yAxis * -1.0f));
-	if (pointToPyramidVoronoi(closestPoint, rigidBody.worldVertices[0], rigidBody.worldVertices[1], rigidBody.worldVertices[2], rigidBody.worldVertices[3]) < 0.001f)
+	if (pointToPyramidVoronoi(closestPoint, rigidBody.worldVertices[0], rigidBody.worldVertices[1], rigidBody.worldVertices[2], rigidBody.worldVertices[3]) < 0.0001f)
 	{
 		vec4 contactPoint = closestPointOnPyramidVoronoi(closestPoint, rigidBody.worldVertices[0], rigidBody.worldVertices[1], rigidBody.worldVertices[2], rigidBody.worldVertices[3]);
 		float impulseMagnitude = calculateImpulse(rigidBody, yAxis, contactPoint);
-		rigidBody.force = yAxis * impulseMagnitude;
-		rigidBody.torque = getTorque(yAxis * impulseMagnitude, rigidBody.bodyCOM + rigidBody.position, contactPoint);
+		rigidBody.force = (yAxis * impulseMagnitude) / deltaTime;
+		rigidBody.torque = getTorque(yAxis * impulseMagnitude, rigidBody.bodyCOM + rigidBody.position, contactPoint)/deltaTime;
 		
 		//vec4 velocityNormal = yAxis * (dot(rigidBody.velocity, yAxis));
 		//vec4 velocityTangent = rigidBody.velocity - velocityNormal;
@@ -431,14 +432,14 @@ void initialiseRigidBodies()
 	for (GLuint i = 0; i < numRigidBodies; i++)
 	{
 		RigidBody &rigidBody = rigidbodies[i];
-		GLfloat randomX1 = ((rand() % 10) - 5) / 500000.0f;
+		/*GLfloat randomX1 = ((rand() % 10) - 5) / 500000.0f;
 		GLfloat randomY1 = ((rand() % 10) - 5) / 500000.0f;
 		GLfloat randomZ1 = ((rand() % 10) - 5) / 500000.0f;
 		GLfloat randomX2 = ((rand() % 100) - 50) / 100000.0f;
 		GLfloat randomY2 = ((rand() % 100) - 50) / 100000.0f;
 		GLfloat randomZ2 = ((rand() % 100) - 50) / 100000.0f;
 		rigidBody.angularMomentum = vec4(randomX1, randomY1, randomZ1, 0.0f);
-		rigidBody.linearMomentum = vec4(randomX2, randomY2, randomZ2, 0.0f);
+		rigidBody.linearMomentum = vec4(randomX2, randomY2, randomZ2, 0.0f);*/
 
 		rigidBody.xMinI = 2 * i;
 		rigidBody.xMaxI = (2 * i) + 1;
