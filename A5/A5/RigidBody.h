@@ -19,7 +19,7 @@ vec4 zAxis = vec4(0.0f, 0.0f, 1.0f, 0.0f);
 enum Mode { BOUNDING_SPHERES, AABB };
 GLfloat deltaTime = 1.0f / 60.0f;
 GLfloat friction = 0.05f;
-GLfloat restitution = 0.5f;
+GLfloat restitution = 0.8f;
 vec4 gravity = vec4(0.0f, -9.81f, 0.0f, 0.0f);
 
 #pragma region RIGIDBODY_CLASS
@@ -517,20 +517,26 @@ float calculateImpulse(RigidBody &rbA, RigidBody &rbB, vec4 contactNormal, vec4 
 	return j;
 }
 
-float calculatePlaneImpulse(RigidBody &rigidBody, vec4 contactPlaneNormal, vec4 contactPoint)
+float calculatePlaneImpulse(RigidBody &rigidBody, vec4 contactPlaneNormal, vec4 contactPoint, bool &collidingContact)
 {
 	vec4 pA_dot = rigidBody.velocity + cross(rigidBody.angularVelocity, (contactPoint - rigidBody.worldCOM));
 	float v_relative = dot(vec3(contactPlaneNormal.v[0], contactPlaneNormal.v[1], contactPlaneNormal.v[2]), vec3(pA_dot.v[0], pA_dot.v[1], pA_dot.v[2]));
 
 	if (v_relative >= 0.001f) //Moving away
+	{
+		collidingContact = false;
 		return 0.0f;
+	}
 	else if (v_relative >= -0.001f) // Resting Contact
 	{	
-		// TODO: Check if this is correct
+		// TODO: Improve this
+		collidingContact = false;
 		return dot(contactPlaneNormal, rigidBody.force) * -1 * deltaTime;
 	}
 
 	// Colliding Contact
+	collidingContact = true;
+
 
 	float numerator = -(1 + restitution) * v_relative;
 
@@ -561,24 +567,25 @@ void checkPlaneCollisions(RigidBody &rigidBody)
 	{
 		if (pointToPlane(rigidBody.worldCentroid, plane_normals[i], (plane_normals[i] * -1)) < rigidBody.boundingSphereRadius)
 		{
-			rigidBody.force = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 			for (int j = 0; j < rigidBody.numPoints; j++)
 			{
 				float distanceToPlane = pointToPlane(rigidBody.worldVertices[j], plane_normals[i], (plane_normals[i] * -1));
 				if (distanceToPlane < 0.01f)
 				{
-					float impulseMagnitude = calculatePlaneImpulse(rigidBody, plane_normals[i], rigidBody.worldVertices[j]);
+					bool collidingContact = false;
+					float impulseMagnitude = calculatePlaneImpulse(rigidBody, plane_normals[i], rigidBody.worldVertices[j], collidingContact);
 					vec4 impulseForce = plane_normals[i] * impulseMagnitude;
 
 					rigidBody.force = impulseForce;
 					rigidBody.linearMomentum += rigidBody.force;
 					rigidBody.velocity += rigidBody.linearMomentum / rigidBody.mass;
-					//rigidBody.torque = getTorque(impulseForce, rigidBody.worldCOM, rigidBody.worldVertices[j]);
-
-					//rigidBody.angularMomentum += rigidBody.torque;
-
 					
-					//rigidBody.angularVelocity = rigidBody.Iinv * rigidBody.angularMomentum;
+					if (collidingContact)
+					{
+						rigidBody.torque = getTorque(impulseForce, rigidBody.worldCOM, rigidBody.worldVertices[j]);
+						rigidBody.angularMomentum += rigidBody.torque;
+						rigidBody.angularVelocity = rigidBody.Iinv * rigidBody.angularMomentum;
+					}		
 				}
 			}
 		}

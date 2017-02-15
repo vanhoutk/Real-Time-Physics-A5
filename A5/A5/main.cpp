@@ -272,7 +272,7 @@ void init()
 	sphereMesh.generateObjectBufferMesh(meshFiles[SPHERE_MESH]);
 
 	//RigidBody rigidBody = RigidBody(asteroid.vertex_count, asteroid.vertex_positions);
-	RigidBody rigidBody = RigidBody(pyramidMesh, 0.2f);
+	RigidBody rigidBody = RigidBody(asteroid, 0.2f);
 	rigidBody.addBoundingSphere(sphereMesh, green);
 	rigidBody.meshColour = vec4(1.0f, 0.0f, 0.0f, 1.0f);
 	//rigidBody.scaleFactor = 0.2f;
