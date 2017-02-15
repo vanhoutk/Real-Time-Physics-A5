@@ -51,7 +51,7 @@ GLfloat cameraSpeed = 0.005f;
 GLfloat deltaTime = 1.0f / 60.0f;
 GLfloat friction = 0.05f;
 GLfloat lastX = 400, lastY = 300;
-GLfloat resilience = 0.98f;
+GLfloat restitution = 0.5f;
 GLuint mode = AABB;
 const GLuint numRigidBodies = 1;
 GLuint shaderProgramID[NUM_SHADERS];
@@ -182,74 +182,95 @@ void processInput()
 
 float calculateImpulse(RigidBody &rigidBody, vec4 contactPlaneNormal, vec4 contactPoint)
 {
-	vec4 pA_dot = rigidBody.velocity + cross(rigidBody.angularVelocity, (contactPoint - (rigidBody.bodyCOM + rigidBody.position)));
+	vec4 pA_dot = rigidBody.velocity + cross(rigidBody.angularVelocity, (contactPoint - rigidBody.worldCOM));
 	//vec4 pB_dot = vec4(0.0f, 0.0f, 0.0f, 0.0f); // Unmoving plane
 	//vec4 pA_pB = pA_dot - pB_dot;
 	float v_relative = dot(vec3(contactPlaneNormal.v[0], contactPlaneNormal.v[1], contactPlaneNormal.v[2]), vec3(pA_dot.v[0], pA_dot.v[1], pA_dot.v[2]));
-	float numerator = -(1 + resilience) * v_relative;
 
-	float mA_inv = 1 / rigidBody.mass;
+	if (v_relative >= 0.001f) //Moving away
+		return 0.0f;
+	else if (v_relative >= -0.001f) // Resting Contact
+		return dot(contactPlaneNormal, rigidBody.force) * -1 * deltaTime;
 
-	vec4 rA = contactPoint - (rigidBody.bodyCOM + rigidBody.position);
+	// Else Colliding Contact
+
+	float numerator = -(1 + restitution) * v_relative;
+
+	float mass_inverse = 1 / rigidBody.mass;
+
+	vec4 rA = contactPoint - rigidBody.worldCOM;
 	vec4 rACrossN = cross(rA, contactPlaneNormal);
 	vec4 rACrossNIinv = rigidBody.Iinv * rACrossN;
 	float rACrossN2 = dot(rACrossNIinv, rACrossN);
 
-	float j = numerator/(mA_inv + rACrossN2);
+	vec4 term3_a = cross(rA, contactPlaneNormal);
+	vec4 term3_b = rigidBody.Iinv * term3_a;
+	vec3 term3_c = cross(vec3(term3_b.v[0], term3_b.v[1], term3_b.v[2]), vec3(rA.v[0], rA.v[1], rA.v[2]));
+	float term3 = dot(vec3(contactPlaneNormal.v[0], contactPlaneNormal.v[1], contactPlaneNormal.v[2]), term3_c);
+
+	float j = numerator/(mass_inverse + term3);
 	return j;
 }
 
 void checkPlaneCollisions(RigidBody &rigidBody)
 {
 	// Ground plane
-	vec4 closestPoint = closestPointOnPlane(rigidBody.position, yAxis, (yAxis * -1.0f));
-	if (pointToPyramidVoronoi(closestPoint, rigidBody.worldVertices[0], rigidBody.worldVertices[1], rigidBody.worldVertices[2], rigidBody.worldVertices[3]) < 0.0001f)
+	// TODO: Need to optimise this
+	vec4 closestPoint = closestPointOnPlane(rigidBody.worldCOM, yAxis, (yAxis * -1.0f));
+	float pointToPyramid = pointToPyramidVoronoi(closestPoint, rigidBody.worldVertices[0], rigidBody.worldVertices[1], rigidBody.worldVertices[2], rigidBody.worldVertices[3]);
+	if (pointToPyramid < 0.001f)
 	{
 		vec4 contactPoint = closestPointOnPyramidVoronoi(closestPoint, rigidBody.worldVertices[0], rigidBody.worldVertices[1], rigidBody.worldVertices[2], rigidBody.worldVertices[3]);
 		float impulseMagnitude = calculateImpulse(rigidBody, yAxis, contactPoint);
-		rigidBody.force = (yAxis * impulseMagnitude) / deltaTime;
-		rigidBody.torque = getTorque(yAxis * impulseMagnitude, rigidBody.bodyCOM + rigidBody.position, contactPoint)/deltaTime;
+		rigidBody.force = (yAxis * impulseMagnitude);
+		//rigidBody.torque = getTorque(yAxis * impulseMagnitude, rigidBody.worldCOM, contactPoint);
+		
+		rigidBody.linearMomentum += rigidBody.force;
+		//rigidBody.angularMomentum += rigidBody.torque;
+
+		rigidBody.velocity += rigidBody.linearMomentum / rigidBody.mass;
+		//rigidBody.angularVelocity = rigidBody.Iinv * rigidBody.angularMomentum;
 		
 		//vec4 velocityNormal = yAxis * (dot(rigidBody.velocity, yAxis));
 		//vec4 velocityTangent = rigidBody.velocity - velocityNormal;
 		//rigidBody.linearMomentum = ((velocityTangent * (1 - friction)) - (velocityNormal * resilience)) * rigidBody.mass;
 		//rigidBody.position -= yAxis * (2 * (dot((rigidBody.position - (yAxis * -1.0f) - vec4(0.0f, rigidBody.boundingSphereRadius, 0.0f, 0.0f)), yAxis)));
 	}
-	if (pointToPlane(rigidBody.position, (yAxis * -1), (yAxis * 1.0f)) < rigidBody.boundingSphereRadius)
+	/*if (pointToPlane(rigidBody.position, (yAxis * -1), (yAxis * 1.0f)) < rigidBody.boundingSphereRadius)
 	{
 		vec4 velocityNormal = (yAxis * -1) * (dot(rigidBody.velocity, (yAxis * -1)));
 		vec4 velocityTangent = rigidBody.velocity - velocityNormal;
-		rigidBody.linearMomentum = ((velocityTangent * (1 - friction)) - (velocityNormal * resilience)) * rigidBody.mass;
+		rigidBody.linearMomentum = ((velocityTangent * (1 - friction)) - (velocityNormal * restitution)) * rigidBody.mass;
 		rigidBody.position -= (yAxis * -1) * (2 * (dot((rigidBody.position - (yAxis * 1.0f) + vec4(0.0f, rigidBody.boundingSphereRadius, 0.0f, 0.0f)), (yAxis * -1))));
 	}
 	if (pointToPlane(rigidBody.position, xAxis, (xAxis * -1.0f)) < rigidBody.boundingSphereRadius)
 	{
 		vec4 velocityNormal = xAxis * (dot(rigidBody.velocity, xAxis));
 		vec4 velocityTangent = rigidBody.velocity - velocityNormal;
-		rigidBody.linearMomentum = ((velocityTangent * (1 - friction)) - (velocityNormal * resilience)) * rigidBody.mass;
+		rigidBody.linearMomentum = ((velocityTangent * (1 - friction)) - (velocityNormal * restitution)) * rigidBody.mass;
 		rigidBody.position -= xAxis * (2 * (dot((rigidBody.position - (xAxis * -1.0f) - vec4(rigidBody.boundingSphereRadius, 0.0f, 0.0f, 0.0f)), xAxis)));
 	}
 	if (pointToPlane(rigidBody.position, (xAxis * -1), (xAxis * 1.0f)) < rigidBody.boundingSphereRadius)
 	{
 		vec4 velocityNormal = (xAxis * -1) * (dot(rigidBody.velocity, (xAxis * -1)));
 		vec4 velocityTangent = rigidBody.velocity - velocityNormal;
-		rigidBody.linearMomentum = ((velocityTangent * (1 - friction)) - (velocityNormal * resilience)) * rigidBody.mass;
+		rigidBody.linearMomentum = ((velocityTangent * (1 - friction)) - (velocityNormal * restitution)) * rigidBody.mass;
 		rigidBody.position -= (xAxis * -1) * (2 * (dot((rigidBody.position - (xAxis * 1.0f) + vec4(rigidBody.boundingSphereRadius, 0.0f, 0.0f, 0.0f)), (xAxis * -1))));
 	}
 	if (pointToPlane(rigidBody.position, zAxis, (zAxis * -1.0f)) < rigidBody.boundingSphereRadius)
 	{
 		vec4 velocityNormal = zAxis * (dot(rigidBody.velocity, zAxis));
 		vec4 velocityTangent = rigidBody.velocity - velocityNormal;
-		rigidBody.linearMomentum = ((velocityTangent * (1 - friction)) - (velocityNormal * resilience)) * rigidBody.mass;
+		rigidBody.linearMomentum = ((velocityTangent * (1 - friction)) - (velocityNormal * restitution)) * rigidBody.mass;
 		rigidBody.position -= zAxis * (2 * (dot((rigidBody.position - (zAxis * -1.0f) - vec4(0.0f, 0.0f, rigidBody.boundingSphereRadius, 0.0f)), zAxis)));
 	}
 	if (pointToPlane(rigidBody.position, (zAxis * -1), (zAxis * 1.0f)) < rigidBody.boundingSphereRadius)
 	{
 		vec4 velocityNormal = (zAxis * -1) * (dot(rigidBody.velocity, (zAxis * -1)));
 		vec4 velocityTangent = rigidBody.velocity - velocityNormal;
-		rigidBody.linearMomentum = ((velocityTangent * (1 - friction)) - (velocityNormal * resilience)) * rigidBody.mass;
+		rigidBody.linearMomentum = ((velocityTangent * (1 - friction)) - (velocityNormal * restitution)) * rigidBody.mass;
 		rigidBody.position -= (zAxis * -1) * (2 * (dot((rigidBody.position - (zAxis * 1.0f) + vec4(0.0f, 0.0f, rigidBody.boundingSphereRadius, 0.0f)), (zAxis * -1))));
-	}
+	}*/
 }
 
 void computeForcesAndTorque(RigidBody &rigidBody)
@@ -259,11 +280,10 @@ void computeForcesAndTorque(RigidBody &rigidBody)
 	rigidBody.torque = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 
 	// Apply Gravity
-	rigidBody.force += gravity * 0.1f * rigidBody.mass;
+	rigidBody.force += gravity * 0.01f * rigidBody.mass;
 
 	// Check for collisions
-	checkPlaneCollisions(rigidBody);
-
+	//checkPlaneCollisions(rigidBody);
 }
 
 void updateRigidBodies()
@@ -271,13 +291,10 @@ void updateRigidBodies()
 	for (GLuint i = 0; i < numRigidBodies; i++)
 	{
 		RigidBody &rigidBody = rigidbodies[i];
-		// Might change this to user input
+
 		computeForcesAndTorque(rigidBody);
 
 		rigidBody.position += rigidBody.velocity * deltaTime;
-
-		// Check for collision
-		//checkPlaneCollisions(rigidBody);
 
 		versor omega;
 		omega.q[0] = 0.0f;
@@ -316,6 +333,10 @@ void updateRigidBodies()
 		{
 			rigidBody.worldVertices[i] = (rigidBody.rotation * rigidBody.initialWorldVertices[i]) + rigidBody.position;
 		}
+
+		rigidBody.worldCOM = (rigidBody.rotation * rigidBody.bodyCOM) + rigidBody.position;
+
+		checkPlaneCollisions(rigidBody);
 
 		if (mode == AABB)
 		{
@@ -432,14 +453,15 @@ void initialiseRigidBodies()
 	for (GLuint i = 0; i < numRigidBodies; i++)
 	{
 		RigidBody &rigidBody = rigidbodies[i];
-		/*GLfloat randomX1 = ((rand() % 10) - 5) / 500000.0f;
-		GLfloat randomY1 = ((rand() % 10) - 5) / 500000.0f;
+		GLfloat randomX1 = ((rand() % 10) - 5) / 500000.0f;
+		/*GLfloat randomY1 = ((rand() % 10) - 5) / 500000.0f;
 		GLfloat randomZ1 = ((rand() % 10) - 5) / 500000.0f;
-		GLfloat randomX2 = ((rand() % 100) - 50) / 100000.0f;
-		GLfloat randomY2 = ((rand() % 100) - 50) / 100000.0f;
-		GLfloat randomZ2 = ((rand() % 100) - 50) / 100000.0f;
-		rigidBody.angularMomentum = vec4(randomX1, randomY1, randomZ1, 0.0f);
-		rigidBody.linearMomentum = vec4(randomX2, randomY2, randomZ2, 0.0f);*/
+		GLfloat randomX2 = ((rand() % 100) - 50) / 100000.0f;*/
+		GLfloat randomY2 = ((rand() % 100) - 100) / 100000.0f;
+		//GLfloat randomZ2 = ((rand() % 100) - 50) / 100000.0f;
+		//rigidBody.angularMomentum = vec4(randomX1, 0.0f, 0.0f, 0.0f);
+		rigidBody.angularVelocity = vec4(randomX1, 0.0f, 0.0f, 0.0f);
+		rigidBody.linearMomentum = vec4(0.0f, randomY2, 0.0f, 0.0f);
 
 		rigidBody.xMinI = 2 * i;
 		rigidBody.xMaxI = (2 * i) + 1;

@@ -13,6 +13,7 @@ public:
 	mat4 Ibody;
 	mat4 IbodyInv;
 	vec4 bodyCOM;
+	vec4 worldCOM;
 
 	// State Variables
 	vec4 position;			// x(t)
@@ -136,6 +137,7 @@ RigidBody::RigidBody(Mesh rigidBodyMesh, GLfloat scaleFactor = 1.0f)
 	this->IbodyInv = inverse(this->Ibody);
 
 	// State Variables
+	this->worldCOM = this->bodyCOM;
 	this->position = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 	this->orientation.q[0] = 0.0f;
 	this->orientation.q[1] = 0.0f;
@@ -191,6 +193,7 @@ RigidBody::RigidBody(int vertex_count, vector<float> vertex_positions)
 	this->IbodyInv = inverse(this->Ibody);
 
 	// State Variables
+	this->worldCOM = this->bodyCOM;
 	this->position = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 	this->orientation.q[0] = 0.0f;
 	this->orientation.q[1] = 0.0f;
