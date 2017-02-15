@@ -206,7 +206,7 @@ void checkPlaneCollisions(RigidBody &rigidBody)
 	{
 		vec4 contactPoint = closestPointOnPyramidVoronoi(closestPoint, rigidBody.worldVertices[0], rigidBody.worldVertices[1], rigidBody.worldVertices[2], rigidBody.worldVertices[3]);
 		float impulseMagnitude = calculateImpulse(rigidBody, yAxis, contactPoint);
-		rigidBody.force += yAxis * impulseMagnitude;
+		rigidBody.force = yAxis * impulseMagnitude;
 		rigidBody.torque = getTorque(yAxis * impulseMagnitude, rigidBody.bodyCOM + rigidBody.position, contactPoint);
 		
 		//vec4 velocityNormal = yAxis * (dot(rigidBody.velocity, yAxis));
@@ -470,16 +470,16 @@ void init()
 		point3.v[0], point3.v[1], point3.v[2],
 
 		point1.v[0], point1.v[1], point1.v[2],
-		point4.v[0], point4.v[1], point4.v[2],
 		point3.v[0], point3.v[1], point3.v[2],
+		point4.v[0], point4.v[1], point4.v[2],
 
 		point4.v[0], point4.v[1], point4.v[2],
-		point2.v[0], point2.v[1], point2.v[2],
 		point3.v[0], point3.v[1], point3.v[2],
+		point2.v[0], point2.v[1], point2.v[2],
 
 		point1.v[0], point1.v[1], point1.v[2],
-		point4.v[0], point4.v[1], point4.v[2],
-		point2.v[0], point2.v[1], point2.v[2]
+		point2.v[0], point2.v[1], point2.v[2],
+		point4.v[0], point4.v[1], point4.v[2]
 	};
 
 	GLfloat bounding_box_vertices[] = {
