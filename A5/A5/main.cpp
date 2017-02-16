@@ -64,7 +64,7 @@ vec3 point4 = vec3(0.0f, -1.0f, -1.166f);
 vector<RigidBody> rigidbodies;
 
 // | Resource Locations
-const char * meshFiles[NUM_MESHES] = { "../Meshes/plane.obj", "../Meshes/particle_reduced.dae", "../Meshes/particle.dae" };
+const char * meshFiles[NUM_MESHES] = { "../Meshes/plane.obj", "../Meshes/cube.dae", "../Meshes/particle.dae" };
 const char * skyboxTextureFiles[6] = { "../Textures/DSposx.png", "../Textures/DSnegx.png", "../Textures/DSposy.png", "../Textures/DSnegy.png", "../Textures/DSposz.png", "../Textures/DSnegz.png"};
 const char * textureFiles[NUM_TEXTURES] = { "../Textures/plane.jpg", "../Textures/asteroid.jpg"  };
 
@@ -125,10 +125,10 @@ void display()
 	for (GLuint i = 0; i < numRigidBodies; i++)
 	{
 		rigidbodies[i].drawMesh(view, projection, view_position);
-		if (mode == BOUNDING_SPHERES)
-			rigidbodies[i].drawBoundingSphere(view, projection);
-		else if (mode == AABB)
-			rigidbodies[i].drawAABB(view, projection, &shaderProgramID[BASIC_COLOUR_SHADER]);
+		//if (mode == BOUNDING_SPHERES)
+		//	rigidbodies[i].drawBoundingSphere(view, projection);
+		//else if (mode == AABB)
+		//	rigidbodies[i].drawAABB(view, projection, &shaderProgramID[BASIC_COLOUR_SHADER]);
 	}
 	
 	draw_text();
@@ -190,8 +190,18 @@ void initialiseRigidBodies()
 		//GLfloat randomY2 = ((rand() % 100) - 100) / 100000.0f;
 		//GLfloat randomZ2 = ((rand() % 100) - 50) / 100000.0f;
 		//rigidBody.angularMomentum = vec4(randomX1, 0.0f, 0.0f, 0.0f);
-		//rigidBody.angularVelocity = vec4(randomX1, 0.0f, 0.0f, 0.0f);
+		//rigidBody.angularVelocity = vec4(0.0005f, 0.0f, 0.0f, 0.0f);
 		//rigidBody.linearMomentum = vec4(0.0f, randomY2, 0.0f, 0.0f);
+		GLfloat rand0 = (rand() % 100) / 100.0f;
+		GLfloat rand1 = (rand() % 100) / 100.0f;
+		GLfloat rand2 = (rand() % 100) / 100.0f;
+		GLfloat rand3 = (rand() % 100) / 100.0f;
+
+		rigidBody.orientation.q[0] = rand0;
+		rigidBody.orientation.q[1] = rand1;
+		rigidBody.orientation.q[2] = rand2;
+		rigidBody.orientation.q[3] = rand3;
+		normalise(rigidBody.orientation);
 
 		rigidBody.xMinI = 2 * i;
 		rigidBody.xMaxI = (2 * i) + 1;
