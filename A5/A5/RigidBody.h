@@ -573,7 +573,7 @@ void checkPlaneCollisions(RigidBody &rigidBody)
 
 	for (int i = 0; i < 1 /*plane_normals.size()*/; i++)
 	{
-		if (pointToPlane(rigidBody.worldCentroid, plane_normals[i], (plane_normals[i] * -1)) < rigidBody.boundingSphereRadius)
+		if (pointToPlane(rigidBody.worldCentroid, plane_normals[i], (plane_normals[i] * -1)) <= rigidBody.boundingSphereRadius)
 		{
 			for (int j = 0; j < rigidBody.numPoints; j++)
 			{
@@ -597,6 +597,9 @@ void checkPlaneCollisions(RigidBody &rigidBody)
 				}
 			}
 			rigidBody.velocity = rigidBody.linearMomentum / rigidBody.mass;
+			// Take into account floating point imprecision
+			if (vec4Magnitude(rigidBody.velocity) >= -0.0025f && vec4Magnitude(rigidBody.velocity) <= 0.0025f)
+				rigidBody.velocity = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 			rigidBody.angularVelocity += rigidBody.Iinv * rigidBody.angularMomentum;
 		}
 	}

@@ -35,17 +35,17 @@ using namespace std;
  */
 //#define BUFFER_OFFSET(i) ((char *)NULL + (i))  // Macro for indexing vertex buffer
 
-#define NUM_MESHES   3
+#define NUM_MESHES   4
 #define NUM_SHADERS	 5
-#define NUM_TEXTURES 2
+#define NUM_TEXTURES 3
 
 bool firstMouse = true;
 bool keys[1024];
 bool pause = false;
 Camera camera(vec3(0.0f, 0.0f, 4.0f));
-enum Meshes { PLANE_MESH, ASTEROID_MESH, SPHERE_MESH };
+enum Meshes { PLANE_MESH, ASTEROID_MESH, SPHERE_MESH, D4_MESH };
 enum Shaders { SKYBOX, BASIC_COLOUR_SHADER, BASIC_TEXTURE_SHADER, LIGHT_SHADER, LIGHT_TEXTURE_SHADER };
-enum Textures { PLANE_TEXTURE, ASTEROID_TEXTURE };
+enum Textures { PLANE_TEXTURE, ASTEROID_TEXTURE, D4_TEXTURE };
 GLfloat cameraSpeed = 0.005f;
 GLfloat lastX = 400, lastY = 300;
 GLuint mode = AABB;
@@ -55,7 +55,7 @@ int screenWidth = 1000;
 int screenHeight = 800;
 int stringIDs[3];
 //Model planeModel;
-Mesh asteroid, boundingBox, sphereMesh, pyramidMesh;
+Mesh asteroid, boundingBox, sphereMesh, pyramidMesh, d4;
 
 vec3 point1 = vec3(-1.0f, -1.0f, 0.577f);
 vec3 point2 = vec3(1.0f, -1.0f, 0.577f);
@@ -64,9 +64,9 @@ vec3 point4 = vec3(0.0f, -1.0f, -1.166f);
 vector<RigidBody> rigidbodies;
 
 // | Resource Locations
-const char * meshFiles[NUM_MESHES] = { "../Meshes/plane.obj", "../Meshes/cube.dae", "../Meshes/particle.dae" };
+const char * meshFiles[NUM_MESHES] = { "../Meshes/plane.obj", "../Meshes/cube.dae", "../Meshes/particle.dae", "../Meshes/d4.obj" };
 const char * skyboxTextureFiles[6] = { "../Textures/DSposx.png", "../Textures/DSnegx.png", "../Textures/DSposy.png", "../Textures/DSnegy.png", "../Textures/DSposz.png", "../Textures/DSnegz.png"};
-const char * textureFiles[NUM_TEXTURES] = { "../Textures/plane.jpg", "../Textures/asteroid.jpg"  };
+const char * textureFiles[NUM_TEXTURES] = { "../Textures/plane.jpg", "../Textures/asteroid.jpg", "../Textures/d4.png"  };
 
 const char * vertexShaderNames[NUM_SHADERS] = { "../Shaders/SkyboxVertexShader.txt", "../Shaders/ParticleVertexShader.txt", "../Shaders/BasicTextureVertexShader.txt", "../Shaders/LightVertexShader.txt", "../Shaders/LightTextureVertexShader.txt" };
 const char * fragmentShaderNames[NUM_SHADERS] = { "../Shaders/SkyboxFragmentShader.txt", "../Shaders/ParticleFragmentShader.txt", "../Shaders/BasicTextureFragmentShader.txt", "../Shaders/LightFragmentShader.txt", "../Shaders/LightTextureFragmentShader.txt" };
@@ -227,24 +227,6 @@ void init()
 		shaderProgramID[i] = CompileShaders(vertexShaderNames[i], fragmentShaderNames[i]);
 	}
 
-	GLfloat pyramid_vertices[] = {
-		point1.v[0], point1.v[1], point1.v[2],
-		point2.v[0], point2.v[1], point2.v[2],
-		point3.v[0], point3.v[1], point3.v[2],
-
-		point1.v[0], point1.v[1], point1.v[2],
-		point3.v[0], point3.v[1], point3.v[2],
-		point4.v[0], point4.v[1], point4.v[2],
-
-		point4.v[0], point4.v[1], point4.v[2],
-		point3.v[0], point3.v[1], point3.v[2],
-		point2.v[0], point2.v[1], point2.v[2],
-
-		point1.v[0], point1.v[1], point1.v[2],
-		point2.v[0], point2.v[1], point2.v[2],
-		point4.v[0], point4.v[1], point4.v[2]
-	};
-
 	GLfloat bounding_box_vertices[] = {
 		1.0f, 1.0f, 1.0f,
 		-1.0f, 1.0f, 1.0f,
@@ -267,9 +249,6 @@ void init()
 		-1.0f, 1.0f, 1.0f
 	};
 
-	pyramidMesh = Mesh(&shaderProgramID[LIGHT_SHADER]);
-	pyramidMesh.generateObjectBufferMesh(pyramid_vertices, 12);
-
 	boundingBox = Mesh(&shaderProgramID[BASIC_COLOUR_SHADER]);
 	boundingBox.generateObjectBufferMesh(bounding_box_vertices, 16);
 
@@ -278,11 +257,15 @@ void init()
 	asteroid.generateObjectBufferMesh(meshFiles[ASTEROID_MESH]);
 	asteroid.loadTexture(textureFiles[ASTEROID_TEXTURE]);
 
+	d4 = Mesh(&shaderProgramID[LIGHT_TEXTURE_SHADER]);
+	d4.generateObjectBufferMesh(meshFiles[D4_MESH]);
+	d4.loadTexture(textureFiles[D4_TEXTURE]);
+
 	sphereMesh = Mesh(&shaderProgramID[BASIC_COLOUR_SHADER]);
 	sphereMesh.generateObjectBufferMesh(meshFiles[SPHERE_MESH]);
 
 	//RigidBody rigidBody = RigidBody(asteroid.vertex_count, asteroid.vertex_positions);
-	RigidBody rigidBody = RigidBody(asteroid, 0.2f);
+	RigidBody rigidBody = RigidBody(d4, 0.5f);
 	rigidBody.addBoundingSphere(sphereMesh, green);
 	rigidBody.meshColour = vec4(1.0f, 0.0f, 0.0f, 1.0f);
 	//rigidBody.scaleFactor = 0.2f;
