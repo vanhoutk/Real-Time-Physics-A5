@@ -17,10 +17,10 @@ vec4 zAxis = vec4(0.0f, 0.0f, 1.0f, 0.0f);
 
 // Parameters
 enum Mode { BOUNDING_SPHERES, AABB };
-GLfloat dampingFactor = 0.6f;
+GLfloat dampingFactor = 0.5f;
 GLfloat deltaTime = 1.0f / 60.0f;
 GLfloat friction = 0.05f;
-GLfloat restitution = 0.95f;
+GLfloat restitution = 0.8f;
 vec4 gravity = vec4(0.0f, -9.81f, 0.0f, 0.0f);
 
 #pragma region RIGIDBODY_CLASS
@@ -523,9 +523,6 @@ float calculatePlaneImpulse(RigidBody &rigidBody, vec4 contactPlaneNormal, vec4 
 	vec4 pA_dot = rigidBody.velocity + cross(rigidBody.angularVelocity, (contactPoint - rigidBody.worldCOM));
 	float v_relative = dot(vec3(contactPlaneNormal.v[0], contactPlaneNormal.v[1], contactPlaneNormal.v[2]), vec3(pA_dot.v[0], pA_dot.v[1], pA_dot.v[2]));
 
-
-
-
 	float numerator = -(1 + restitution) * v_relative;
 
 	float mass_inverse = 1 / rigidBody.mass;
@@ -546,10 +543,8 @@ float calculatePlaneImpulse(RigidBody &rigidBody, vec4 contactPlaneNormal, vec4 
 	}
 	else if (v_relative >= -0.001f) // Resting Contact
 	{
-		// TODO: Improve this
 		collidingContact = false;
 		return j_resting;
-		//return dot(contactPlaneNormal, rigidBody.force) * -1 * deltaTime;
 	}
 	else
 	{
@@ -571,14 +566,14 @@ void checkPlaneCollisions(RigidBody &rigidBody)
 	plane_normals.push_back(zAxis);
 	plane_normals.push_back(zAxis * -1);
 
-	for (int i = 0; i < 1 /*plane_normals.size()*/; i++)
+	for (int i = 0; i < plane_normals.size(); i++)
 	{
 		if (pointToPlane(rigidBody.worldCentroid, plane_normals[i], (plane_normals[i] * -1)) <= rigidBody.boundingSphereRadius)
 		{
 			for (int j = 0; j < rigidBody.numPoints; j++)
 			{
 				float distanceToPlane = pointToPlane(rigidBody.worldVertices[j], plane_normals[i], (plane_normals[i] * -1));
-				if (distanceToPlane < 0.01f)
+				if (distanceToPlane < 0.001f)
 				{
 					bool collidingContact = false;
 					float impulseMagnitude = calculatePlaneImpulse(rigidBody, plane_normals[i], rigidBody.worldVertices[j], collidingContact);
@@ -596,11 +591,20 @@ void checkPlaneCollisions(RigidBody &rigidBody)
 					}		
 				}
 			}
+			//if (vec4Magnitude(rigidBody.linearMomentum) >= -0.00001f && vec4Magnitude(rigidBody.linearMomentum) <= 0.00001f)
+			//	rigidBody.linearMomentum = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 			rigidBody.velocity = rigidBody.linearMomentum / rigidBody.mass;
-			// Take into account floating point imprecision
-			if (vec4Magnitude(rigidBody.velocity) >= -0.0025f && vec4Magnitude(rigidBody.velocity) <= 0.0025f)
+			if (vec4Magnitude(rigidBody.velocity) <= 0.005f)
 				rigidBody.velocity = vec4(0.0f, 0.0f, 0.0f, 0.0f);
-			rigidBody.angularVelocity += rigidBody.Iinv * rigidBody.angularMomentum;
+			// Take into account floating point imprecision
+			//if (vec4Magnitude(rigidBody.angularMomentum) >= -0.0000001f && vec4Magnitude(rigidBody.angularMomentum) <= 0.0000001f)
+			//	rigidBody.angularMomentum = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+			rigidBody.angularVelocity = rigidBody.Iinv * rigidBody.angularMomentum;
+			if (vec4Magnitude(rigidBody.angularVelocity) <= 0.05f)
+			{
+				//rigidBody.angularMomentum = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+				rigidBody.angularVelocity = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+			}
 		}
 	}
 

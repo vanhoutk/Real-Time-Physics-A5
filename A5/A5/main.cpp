@@ -35,27 +35,27 @@ using namespace std;
  */
 //#define BUFFER_OFFSET(i) ((char *)NULL + (i))  // Macro for indexing vertex buffer
 
-#define NUM_MESHES   4
+#define NUM_MESHES   8
 #define NUM_SHADERS	 5
-#define NUM_TEXTURES 3
+#define NUM_TEXTURES 7
 
 bool firstMouse = true;
 bool keys[1024];
 bool pause = false;
 Camera camera(vec3(0.0f, 0.0f, 4.0f));
-enum Meshes { PLANE_MESH, ASTEROID_MESH, SPHERE_MESH, D4_MESH };
+enum Meshes { PLANE_MESH, D6_MESH, SPHERE_MESH, D4_MESH, D8_MESH, D10_MESH, D12_MESH, D20_MESH};
 enum Shaders { SKYBOX, BASIC_COLOUR_SHADER, BASIC_TEXTURE_SHADER, LIGHT_SHADER, LIGHT_TEXTURE_SHADER };
-enum Textures { PLANE_TEXTURE, ASTEROID_TEXTURE, D4_TEXTURE };
+enum Textures { PLANE_TEXTURE, D4_TEXTURE, D6_TEXTURE, D8_TEXTURE, D10_TEXTURE, D12_TEXTURE, D20_TEXTURE};
 GLfloat cameraSpeed = 0.005f;
 GLfloat lastX = 400, lastY = 300;
 GLuint mode = AABB;
-const GLuint numRigidBodies = 1;
+const GLuint numRigidBodies = 4;
 GLuint shaderProgramID[NUM_SHADERS];
 int screenWidth = 1000;
 int screenHeight = 800;
 int stringIDs[3];
 //Model planeModel;
-Mesh asteroid, boundingBox, sphereMesh, pyramidMesh, d4;
+Mesh asteroid, boundingBox, sphereMesh, pyramidMesh, d4, d6, d8, d10, d12, d20;
 
 vec3 point1 = vec3(-1.0f, -1.0f, 0.577f);
 vec3 point2 = vec3(1.0f, -1.0f, 0.577f);
@@ -64,9 +64,9 @@ vec3 point4 = vec3(0.0f, -1.0f, -1.166f);
 vector<RigidBody> rigidbodies;
 
 // | Resource Locations
-const char * meshFiles[NUM_MESHES] = { "../Meshes/plane.obj", "../Meshes/cube.dae", "../Meshes/particle.dae", "../Meshes/d4.obj" };
+const char * meshFiles[NUM_MESHES] = { "../Meshes/plane.obj", "../Meshes/cube.dae", "../Meshes/particle.dae", "../Meshes/d4.obj", "../Meshes/d8.obj", "../Meshes/d10.obj", "../Meshes/d12.obj", "../Meshes/d20.obj" };
 const char * skyboxTextureFiles[6] = { "../Textures/DSposx.png", "../Textures/DSnegx.png", "../Textures/DSposy.png", "../Textures/DSnegy.png", "../Textures/DSposz.png", "../Textures/DSnegz.png"};
-const char * textureFiles[NUM_TEXTURES] = { "../Textures/plane.jpg", "../Textures/asteroid.jpg", "../Textures/d4.png"  };
+const char * textureFiles[NUM_TEXTURES] = { "../Textures/plane.jpg", "../Textures/d4.png", "../Textures/d6.png", "../Textures/d8.png", "../Textures/d10.png", "../Textures/d12.png", "../Textures/d20.png" };
 
 const char * vertexShaderNames[NUM_SHADERS] = { "../Shaders/SkyboxVertexShader.txt", "../Shaders/ParticleVertexShader.txt", "../Shaders/BasicTextureVertexShader.txt", "../Shaders/LightVertexShader.txt", "../Shaders/LightTextureVertexShader.txt" };
 const char * fragmentShaderNames[NUM_SHADERS] = { "../Shaders/SkyboxFragmentShader.txt", "../Shaders/ParticleFragmentShader.txt", "../Shaders/BasicTextureFragmentShader.txt", "../Shaders/LightFragmentShader.txt", "../Shaders/LightTextureFragmentShader.txt" };
@@ -120,7 +120,7 @@ void display()
 	mat4 model = identity_mat4();
 	vec4 view_position = vec4(camera.Position.v[0], camera.Position.v[1], camera.Position.v[2], 0.0f);
 
-	boundingBox.drawLine(view, projection, model, vec4(1.0f, 1.0f, 0.0f, 1.0f));
+	
 
 	for (GLuint i = 0; i < numRigidBodies; i++)
 	{
@@ -131,6 +131,8 @@ void display()
 		//	rigidbodies[i].drawAABB(view, projection, &shaderProgramID[BASIC_COLOUR_SHADER]);
 	}
 	
+	boundingBox.drawLine(view, projection, model, vec4(1.0f, 1.0f, 0.0f, 1.0f));
+
 	draw_text();
 	
 	glutSwapBuffers();
@@ -183,15 +185,18 @@ void initialiseRigidBodies()
 	for (GLuint i = 0; i < numRigidBodies; i++)
 	{
 		RigidBody &rigidBody = rigidbodies[i];
-		GLfloat randomX1 = ((rand() % 10) - 5) / 500000.0f;
-		/*GLfloat randomY1 = ((rand() % 10) - 5) / 500000.0f;
-		GLfloat randomZ1 = ((rand() % 10) - 5) / 500000.0f;
-		GLfloat randomX2 = ((rand() % 100) - 50) / 100000.0f;*/
+		GLfloat randomX1 = ((rand() % 8) - 4) / 5.0f;
+		GLfloat randomY1 = ((rand() % 8)) / 10.0f;
+		GLfloat randomZ1 = ((rand() % 8) - 4) / 5.0f;
+		/*GLfloat randomX2 = ((rand() % 100) - 50) / 100000.0f;*/
 		//GLfloat randomY2 = ((rand() % 100) - 100) / 100000.0f;
 		//GLfloat randomZ2 = ((rand() % 100) - 50) / 100000.0f;
 		//rigidBody.angularMomentum = vec4(randomX1, 0.0f, 0.0f, 0.0f);
 		//rigidBody.angularVelocity = vec4(0.0005f, 0.0f, 0.0f, 0.0f);
 		//rigidBody.linearMomentum = vec4(0.0f, randomY2, 0.0f, 0.0f);
+
+		rigidBody.position = vec4(randomX1, randomY1, randomZ1, 0.0f);
+
 		GLfloat rand0 = (rand() % 100) / 100.0f;
 		GLfloat rand1 = (rand() % 100) / 100.0f;
 		GLfloat rand2 = (rand() % 100) / 100.0f;
@@ -252,26 +257,55 @@ void init()
 	boundingBox = Mesh(&shaderProgramID[BASIC_COLOUR_SHADER]);
 	boundingBox.generateObjectBufferMesh(bounding_box_vertices, 16);
 
-	//planeModel = Model(&shaderProgramID[LIGHT_TEXTURE_SHADER], meshFiles[PLANE_MESH], textureFiles[PLANE_TEXTURE]);
-	asteroid = Mesh(&shaderProgramID[LIGHT_TEXTURE_SHADER]);
-	asteroid.generateObjectBufferMesh(meshFiles[ASTEROID_MESH]);
-	asteroid.loadTexture(textureFiles[ASTEROID_TEXTURE]);
-
-	d4 = Mesh(&shaderProgramID[LIGHT_TEXTURE_SHADER]);
+	d4 = Mesh(&shaderProgramID[BASIC_TEXTURE_SHADER]);
 	d4.generateObjectBufferMesh(meshFiles[D4_MESH]);
 	d4.loadTexture(textureFiles[D4_TEXTURE]);
+
+	d6 = Mesh(&shaderProgramID[BASIC_TEXTURE_SHADER]);
+	d6.generateObjectBufferMesh(meshFiles[D6_MESH]);
+	d6.loadTexture(textureFiles[D6_TEXTURE]);
+
+	d8 = Mesh(&shaderProgramID[BASIC_TEXTURE_SHADER]);
+	d8.generateObjectBufferMesh(meshFiles[D8_MESH]);
+	d8.loadTexture(textureFiles[D8_TEXTURE]);
+
+	d10 = Mesh(&shaderProgramID[BASIC_TEXTURE_SHADER]);
+	d10.generateObjectBufferMesh(meshFiles[D10_MESH]);
+	d10.loadTexture(textureFiles[D10_TEXTURE]);
+
+	/*d12 = Mesh(&shaderProgramID[LIGHT_TEXTURE_SHADER]);
+	d12.generateObjectBufferMesh(meshFiles[D12_MESH]);
+	d12.loadTexture(textureFiles[D12_TEXTURE]);
+
+	d20 = Mesh(&shaderProgramID[LIGHT_TEXTURE_SHADER]);
+	d20.generateObjectBufferMesh(meshFiles[D20_MESH]);
+	d20.loadTexture(textureFiles[D20_TEXTURE]);*/
 
 	sphereMesh = Mesh(&shaderProgramID[BASIC_COLOUR_SHADER]);
 	sphereMesh.generateObjectBufferMesh(meshFiles[SPHERE_MESH]);
 
 	//RigidBody rigidBody = RigidBody(asteroid.vertex_count, asteroid.vertex_positions);
-	RigidBody rigidBody = RigidBody(d4, 0.5f);
-	rigidBody.addBoundingSphere(sphereMesh, green);
-	rigidBody.meshColour = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+	RigidBody d4rb = RigidBody(d4, 0.4f);
+	d4rb.addBoundingSphere(sphereMesh, green);
+	rigidbodies.push_back(d4rb);
+
+	RigidBody d6rb = RigidBody(d6, 0.2f);
+	d6rb.addBoundingSphere(sphereMesh, green);
+	rigidbodies.push_back(d6rb);
+
+	RigidBody d8rb = RigidBody(d8, 0.5f);
+	d8rb.addBoundingSphere(sphereMesh, green);
+	rigidbodies.push_back(d8rb);
+
+	RigidBody d10rb = RigidBody(d10, 0.5f);
+	d10rb.addBoundingSphere(sphereMesh, green);
+	rigidbodies.push_back(d10rb);
+
+	//d4rb.meshColour = vec4(1.0f, 0.0f, 0.0f, 1.0f);
 	//rigidBody.scaleFactor = 0.2f;
 
-	for (GLuint i = 0; i < numRigidBodies; i++)
-		rigidbodies.push_back(rigidBody);
+	//for (GLuint i = 0; i < numRigidBodies; i++)
+	//	rigidbodies.push_back(rigidBody);
 
 	initialiseRigidBodies();
 }
