@@ -71,6 +71,8 @@ const char * textureFiles[NUM_TEXTURES] = { "../Textures/plane.jpg", "../Texture
 const char * vertexShaderNames[NUM_SHADERS] = { "../Shaders/SkyboxVertexShader.txt", "../Shaders/ParticleVertexShader.txt", "../Shaders/BasicTextureVertexShader.txt", "../Shaders/LightVertexShader.txt", "../Shaders/LightTextureVertexShader.txt" };
 const char * fragmentShaderNames[NUM_SHADERS] = { "../Shaders/SkyboxFragmentShader.txt", "../Shaders/ParticleFragmentShader.txt", "../Shaders/BasicTextureFragmentShader.txt", "../Shaders/LightFragmentShader.txt", "../Shaders/LightTextureFragmentShader.txt" };
 
+void initialiseRigidBodies(bool indices);
+
 string frf(const float &f)
 {
 	ostringstream ss;
@@ -153,6 +155,18 @@ void processInput()
 		mode = BOUNDING_SPHERES;
 	if (keys['2'])
 		mode = AABB;
+
+	if (keys['5'])
+		useForce = -1;
+	if (keys['6'])
+		useForce = FORCE1;
+	if (keys['7'])
+		useForce = FORCE2;
+	if (keys['8'])
+		useForce = FORCE3;
+	if (keys['9'])
+		useForce = FORCE4;
+
 	if (keys['p'])
 		pause = true;
 	if (keys['o'])
@@ -180,7 +194,7 @@ void updateScene()
 	glutPostRedisplay();
 }
 
-void initialiseRigidBodies()
+void initialiseRigidBodies(bool indices)
 {
 	for (GLuint i = 0; i < numRigidBodies; i++)
 	{
@@ -208,12 +222,15 @@ void initialiseRigidBodies()
 		rigidBody.orientation.q[3] = rand3;
 		normalise(rigidBody.orientation);
 
-		rigidBody.xMinI = 2 * i;
-		rigidBody.xMaxI = (2 * i) + 1;
-		rigidBody.yMinI = 2 * i;
-		rigidBody.yMaxI = (2 * i) + 1;
-		rigidBody.zMinI = 2 * i;
-		rigidBody.zMaxI = (2 * i) + 1;
+		if (indices)
+		{
+			rigidBody.xMinI = 2 * i;
+			rigidBody.xMaxI = (2 * i) + 1;
+			rigidBody.yMinI = 2 * i;
+			rigidBody.yMaxI = (2 * i) + 1;
+			rigidBody.zMinI = 2 * i;
+			rigidBody.zMaxI = (2 * i) + 1;
+		}
 	}
 }
 
@@ -307,7 +324,7 @@ void init()
 	//for (GLuint i = 0; i < numRigidBodies; i++)
 	//	rigidbodies.push_back(rigidBody);
 
-	initialiseRigidBodies();
+	initialiseRigidBodies(true);
 }
 
 /*
@@ -317,6 +334,11 @@ void init()
 void pressNormalKeys(unsigned char key, int x, int y)
 {
 	keys[key] = true;
+	if (keys['k'])
+		useGravity = !useGravity;
+
+	if (keys['0'])
+		initialiseRigidBodies(false);
 }
 
 void releaseNormalKeys(unsigned char key, int x, int y)

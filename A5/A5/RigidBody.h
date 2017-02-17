@@ -16,11 +16,14 @@ vec4 xAxis = vec4(1.0f, 0.0f, 0.0f, 0.0f);
 vec4 zAxis = vec4(0.0f, 0.0f, 1.0f, 0.0f);
 
 // Parameters
+bool useGravity = true;
+enum Forces { FORCE1, FORCE2, FORCE3, FORCE4 };
 enum Mode { BOUNDING_SPHERES, AABB };
 GLfloat dampingFactor = 0.5f;
 GLfloat deltaTime = 1.0f / 60.0f;
-GLfloat friction = 0.05f;
+GLfloat friction = 0.9f;
 GLfloat restitution = 0.8f;
+GLuint useForce = -1;
 vec4 gravity = vec4(0.0f, -9.81f, 0.0f, 0.0f);
 
 #pragma region RIGIDBODY_CLASS
@@ -596,6 +599,7 @@ void checkPlaneCollisions(RigidBody &rigidBody)
 			rigidBody.velocity = rigidBody.linearMomentum / rigidBody.mass;
 			if (vec4Magnitude(rigidBody.velocity) <= 0.005f)
 				rigidBody.velocity = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+
 			// Take into account floating point imprecision
 			//if (vec4Magnitude(rigidBody.angularMomentum) >= -0.0000001f && vec4Magnitude(rigidBody.angularMomentum) <= 0.0000001f)
 			//	rigidBody.angularMomentum = vec4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -642,7 +646,25 @@ void computeForcesAndTorque(RigidBody &rigidBody)
 	rigidBody.torque = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 
 	// Apply Gravity
-	rigidBody.force += gravity * 0.01f * rigidBody.mass;
+	if(useGravity)
+		rigidBody.force += gravity * 0.01f * rigidBody.mass;
+
+	if (useForce == FORCE1)
+	{
+		rigidBody.force -= gravity * 0.01f * rigidBody.mass;
+	}
+	else if (useForce == FORCE2)
+	{
+		rigidBody.force += vec4(0.001f, 0.001f, 0.001f, 0.0f) * rigidBody.mass;
+	}
+	else if (useForce == FORCE3)
+	{
+		rigidBody.force += vec4(-0.001f, 0.001f, 0.001f, 0.0f) * rigidBody.mass;
+	}
+	else if (useForce == FORCE4)
+	{
+		rigidBody.force += vec4(0.001f, 0.0f, 0.001f, 0.0f) * rigidBody.mass;
+	}
 }
 
 
