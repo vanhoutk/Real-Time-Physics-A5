@@ -20,9 +20,9 @@ bool useGravity = true;
 enum Forces { FORCE1, FORCE2, FORCE3, FORCE4 };
 enum Mode { BOUNDING_SPHERES, AABB };
 GLfloat dampingFactor = 0.5f;
-GLfloat deltaTime = 1.0f / 60.0f;
+GLfloat deltaTime = 1.0f / 300.0f;
 GLfloat friction = 0.9f;
-GLfloat restitution = 0.8f;
+GLfloat restitution = 0.6f; //0.996f is a close approximation of perfect elasticity
 GLuint useForce = -1;
 vec4 gravity = vec4(0.0f, -9.81f, 0.0f, 0.0f);
 
@@ -276,7 +276,7 @@ vec4 RigidBody::getCentroid()
 	{
 		sum += this->worldVertices[i];
 	}
-	return sum/this->numPoints;
+	return sum/(float)this->numPoints;
 }
 
 // Adapted from:
@@ -291,15 +291,15 @@ void RigidBody::computeMassInertia(bool bodyCoords)
 {
 	float oneDiv6 = (1.0f / 6.0f);
 	float oneDiv24 = (1.0f / 24.0f);
-	float oneDiv60 = (1.0 / 60.0);
-	float oneDiv120 = (1.0 / 120.0);
+	float oneDiv60 = (1.0f / 60.0f);
+	float oneDiv120 = (1.0f / 120.0f);
 
 	// order:  1, x, y, z, x^2, y^2, z^2, xy, yz, zx
 	float integral[10] = { 0.0f, 0.0f, 0.0f, 0.0f,
 		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
 
 	int index = 0;
-	for (int i = 0; i < numTriangles; ++i)
+	for (GLuint i = 0; i < numTriangles; ++i)
 	{
 		// Get vertices of triangle i.
 		vec3 v0 = bodyVertices[index++];
@@ -526,7 +526,9 @@ float calculatePlaneImpulse(RigidBody &rigidBody, vec4 contactPlaneNormal, vec4 
 	vec4 pA_dot = rigidBody.velocity + cross(rigidBody.angularVelocity, (contactPoint - rigidBody.worldCOM));
 	float v_relative = dot(vec3(contactPlaneNormal.v[0], contactPlaneNormal.v[1], contactPlaneNormal.v[2]), vec3(pA_dot.v[0], pA_dot.v[1], pA_dot.v[2]));
 
-	float numerator = -(1 + restitution) * v_relative;
+	float modifier = -(1.0f + restitution);
+
+	float numerator = modifier * v_relative;
 
 	float mass_inverse = 1 / rigidBody.mass;
 
@@ -569,42 +571,46 @@ void checkPlaneCollisions(RigidBody &rigidBody)
 	plane_normals.push_back(zAxis);
 	plane_normals.push_back(zAxis * -1);
 
-	for (int i = 0; i < plane_normals.size(); i++)
+	for (int i = 0; i < (int)plane_normals.size(); i++)
 	{
 		if (pointToPlane(rigidBody.worldCentroid, plane_normals[i], (plane_normals[i] * -1)) <= rigidBody.boundingSphereRadius)
 		{
-			for (int j = 0; j < rigidBody.numPoints; j++)
+			for (GLuint j = 0; j < rigidBody.numPoints; j++)
 			{
 				float distanceToPlane = pointToPlane(rigidBody.worldVertices[j], plane_normals[i], (plane_normals[i] * -1));
 				if (distanceToPlane < 0.001f)
 				{
 					bool collidingContact = false;
 					float impulseMagnitude = calculatePlaneImpulse(rigidBody, plane_normals[i], rigidBody.worldVertices[j], collidingContact);
+					//printf("Impulse magnitude: %f \n", impulseMagnitude);
 					vec4 impulseForce = plane_normals[i] * impulseMagnitude;
 					
 					rigidBody.force = impulseForce;
 					rigidBody.linearMomentum += rigidBody.force;
-					
+					//rigidBody.velocity = rigidBody.linearMomentum / rigidBody.mass;
+					//float velocity_normal = dot(vec3(plane_normals[i].v[0], plane_normals[i].v[1], plane_normals[i].v[2]), vec3(rigidBody.velocity.v[0], rigidBody.velocity.v[1], rigidBody.velocity.v[2]));
+					//if(velocity_normal >= -0.1f && velocity_normal <= 0.1f)
+					//	rigidBody.velocity = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 					
 					if (collidingContact)
 					{
 						rigidBody.torque = getTorque(impulseForce, rigidBody.worldCOM, rigidBody.worldVertices[j]);
-						rigidBody.angularMomentum += rigidBody.torque * dampingFactor;
-						
+						rigidBody.angularMomentum += rigidBody.torque * dampingFactor;	
 					}		
 				}
 			}
 			//if (vec4Magnitude(rigidBody.linearMomentum) >= -0.00001f && vec4Magnitude(rigidBody.linearMomentum) <= 0.00001f)
 			//	rigidBody.linearMomentum = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+			
 			rigidBody.velocity = rigidBody.linearMomentum / rigidBody.mass;
-			if (vec4Magnitude(rigidBody.velocity) <= 0.005f)
+			if (vec4Magnitude(rigidBody.velocity) <= 0.1f)
 				rigidBody.velocity = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 
 			// Take into account floating point imprecision
 			//if (vec4Magnitude(rigidBody.angularMomentum) >= -0.0000001f && vec4Magnitude(rigidBody.angularMomentum) <= 0.0000001f)
 			//	rigidBody.angularMomentum = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 			rigidBody.angularVelocity = rigidBody.Iinv * rigidBody.angularMomentum;
-			if (vec4Magnitude(rigidBody.angularVelocity) <= 0.05f)
+			if (vec4Magnitude(rigidBody.angularVelocity) <= 0.1f)
 			{
 				//rigidBody.angularMomentum = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 				rigidBody.angularVelocity = vec4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -647,7 +653,7 @@ void computeForcesAndTorque(RigidBody &rigidBody)
 
 	// Apply Gravity
 	if(useGravity)
-		rigidBody.force += gravity * 0.01f * rigidBody.mass;
+		rigidBody.force += gravity * 1.0f * rigidBody.mass;
 
 	if (useForce == FORCE1)
 	{
@@ -711,7 +717,7 @@ void updateRigidBodies(GLuint mode, GLuint numRigidBodies, vector<RigidBody> &ri
 		rigidBody.angularVelocity = rigidBody.Iinv * rigidBody.angularMomentum;
 
 		// Update all world points
-		for (int i = 0; i < rigidBody.numPoints; i++)
+		for (GLuint i = 0; i < rigidBody.numPoints; i++)
 		{
 			rigidBody.worldVertices[i] = (rigidBody.rotation * rigidBody.initialWorldVertices[i]) + rigidBody.position;
 		}
@@ -730,7 +736,7 @@ void updateRigidBodies(GLuint mode, GLuint numRigidBodies, vector<RigidBody> &ri
 			rigidBody.zMin = rigidBody.worldVertices[0].v[2];
 			rigidBody.zMax = rigidBody.worldVertices[0].v[2];
 
-			for (int i = 1; i < rigidBody.numPoints; i++)
+			for (GLuint i = 1; i < rigidBody.numPoints; i++)
 			{
 				vec4 vertex = rigidBody.worldVertices[i];
 
@@ -796,9 +802,9 @@ bool isColliding(const RigidBody& bdi, const RigidBody& cdi)
 void checkAABBCollisions(GLuint numRigidBodies, vector<RigidBody> &rigidbodies)
 {
 	vector<bool> m_collision(numRigidBodies, false);
-	for (int i = 0; i < numRigidBodies; i++)
+	for (GLuint i = 0; i < numRigidBodies; i++)
 	{
-		for (int j = i + 1; j < numRigidBodies; j++)
+		for (GLuint j = i + 1; j < numRigidBodies; j++)
 		{
 			if (isColliding(rigidbodies[i], rigidbodies[j]))
 			{
@@ -808,7 +814,7 @@ void checkAABBCollisions(GLuint numRigidBodies, vector<RigidBody> &rigidbodies)
 		}
 	}
 
-	for (int k = 0; k < numRigidBodies; k++)
+	for (GLuint k = 0; k < numRigidBodies; k++)
 	{
 		rigidbodies[k].collisionAABB = m_collision[k];
 		rigidbodies[k].boundingBoxColour = m_collision[k] ? red : green;

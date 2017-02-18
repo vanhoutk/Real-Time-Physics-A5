@@ -18,19 +18,19 @@ e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - comput
 e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - computers\cs7057 - real-time physics\assignments\code\real-time-physics-a5\a5\a5\RigidBody.h(302): warning C4018: '<': signed/unsigned mismatch
 e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - computers\cs7057 - real-time physics\assignments\code\real-time-physics-a5\a5\a5\RigidBody.h(572): warning C4018: '<': signed/unsigned mismatch
 e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - computers\cs7057 - real-time physics\assignments\code\real-time-physics-a5\a5\a5\RigidBody.h(576): warning C4018: '<': signed/unsigned mismatch
-e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - computers\cs7057 - real-time physics\assignments\code\real-time-physics-a5\a5\a5\RigidBody.h(719): warning C4018: '<': signed/unsigned mismatch
-e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - computers\cs7057 - real-time physics\assignments\code\real-time-physics-a5\a5\a5\RigidBody.h(738): warning C4018: '<': signed/unsigned mismatch
-e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - computers\cs7057 - real-time physics\assignments\code\real-time-physics-a5\a5\a5\RigidBody.h(804): warning C4018: '<': signed/unsigned mismatch
-e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - computers\cs7057 - real-time physics\assignments\code\real-time-physics-a5\a5\a5\RigidBody.h(806): warning C4018: '<': signed/unsigned mismatch
-e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - computers\cs7057 - real-time physics\assignments\code\real-time-physics-a5\a5\a5\RigidBody.h(816): warning C4018: '<': signed/unsigned mismatch
+e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - computers\cs7057 - real-time physics\assignments\code\real-time-physics-a5\a5\a5\RigidBody.h(714): warning C4018: '<': signed/unsigned mismatch
+e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - computers\cs7057 - real-time physics\assignments\code\real-time-physics-a5\a5\a5\RigidBody.h(733): warning C4018: '<': signed/unsigned mismatch
+e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - computers\cs7057 - real-time physics\assignments\code\real-time-physics-a5\a5\a5\RigidBody.h(799): warning C4018: '<': signed/unsigned mismatch
+e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - computers\cs7057 - real-time physics\assignments\code\real-time-physics-a5\a5\a5\RigidBody.h(801): warning C4018: '<': signed/unsigned mismatch
+e:\users\kris\documents\college\fifth year onedrive\onedrive\fifth year - computers\cs7057 - real-time physics\assignments\code\real-time-physics-a5\a5\a5\RigidBody.h(811): warning C4018: '<': signed/unsigned mismatch
 main.cpp(366): warning C4244: '=': conversion from 'int' to 'GLfloat', possible loss of data
 main.cpp(367): warning C4244: '=': conversion from 'int' to 'GLfloat', possible loss of data
 main.cpp(374): warning C4244: '=': conversion from 'int' to 'GLfloat', possible loss of data
 main.cpp(375): warning C4244: '=': conversion from 'int' to 'GLfloat', possible loss of data
 main.cpp(389): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
   Generating code
-  1 of 908 functions ( 0.1%) were compiled, the rest were copied from previous compilation.
+  48 of 908 functions ( 5.3%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    1 functions had inline decision re-evaluated but remain unchanged
+    30 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   A5.vcxproj -> E:\Users\Kris\Documents\College\Fifth Year OneDrive\OneDrive\Fifth Year - Computers\CS7057 - Real-Time Physics\Assignments\Code\Real-Time-Physics-A5\A5\Release\A5.exe

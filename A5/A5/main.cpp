@@ -47,9 +47,9 @@ enum Meshes { PLANE_MESH, D6_MESH, SPHERE_MESH, D4_MESH, D8_MESH, D10_MESH, D12_
 enum Shaders { SKYBOX, BASIC_COLOUR_SHADER, BASIC_TEXTURE_SHADER, LIGHT_SHADER, LIGHT_TEXTURE_SHADER };
 enum Textures { PLANE_TEXTURE, D4_TEXTURE, D6_TEXTURE, D8_TEXTURE, D10_TEXTURE, D12_TEXTURE, D20_TEXTURE};
 GLfloat cameraSpeed = 0.005f;
-GLfloat lastX = 400, lastY = 300;
+GLuint lastX = 400, lastY = 300;
 GLuint mode = AABB;
-const GLuint numRigidBodies = 4;
+const GLuint numRigidBodies = 5;
 GLuint shaderProgramID[NUM_SHADERS];
 int screenWidth = 1000;
 int screenHeight = 800;
@@ -290,13 +290,13 @@ void init()
 	d10.generateObjectBufferMesh(meshFiles[D10_MESH]);
 	d10.loadTexture(textureFiles[D10_TEXTURE]);
 
-	/*d12 = Mesh(&shaderProgramID[LIGHT_TEXTURE_SHADER]);
+	d12 = Mesh(&shaderProgramID[BASIC_TEXTURE_SHADER]);
 	d12.generateObjectBufferMesh(meshFiles[D12_MESH]);
 	d12.loadTexture(textureFiles[D12_TEXTURE]);
 
-	d20 = Mesh(&shaderProgramID[LIGHT_TEXTURE_SHADER]);
+	d20 = Mesh(&shaderProgramID[BASIC_TEXTURE_SHADER]);
 	d20.generateObjectBufferMesh(meshFiles[D20_MESH]);
-	d20.loadTexture(textureFiles[D20_TEXTURE]);*/
+	d20.loadTexture(textureFiles[D20_TEXTURE]);
 
 	sphereMesh = Mesh(&shaderProgramID[BASIC_COLOUR_SHADER]);
 	sphereMesh.generateObjectBufferMesh(meshFiles[SPHERE_MESH]);
@@ -317,6 +317,10 @@ void init()
 	RigidBody d10rb = RigidBody(d10, 0.5f);
 	d10rb.addBoundingSphere(sphereMesh, green);
 	rigidbodies.push_back(d10rb);
+
+	RigidBody d20rb = RigidBody(d20, 0.4f);
+	d20rb.addBoundingSphere(sphereMesh, green);
+	rigidbodies.push_back(d20rb);
 
 	//d4rb.meshColour = vec4(1.0f, 0.0f, 0.0f, 1.0f);
 	//rigidBody.scaleFactor = 0.2f;
@@ -368,13 +372,13 @@ void processMouse(int x, int y)
 		firstMouse = false;
 	}
 
-	GLfloat xoffset = x - lastX;
-	GLfloat yoffset = lastY - y;
+	int xoffset = x - lastX;
+	int yoffset = lastY - y;
 
 	lastX = x;
 	lastY = y;
 
-	camera.ProcessMouseMovement(xoffset, yoffset);
+	camera.ProcessMouseMovement((GLfloat)xoffset, (GLfloat)yoffset);
 }
 
 void mouseWheel(int button, int dir, int x, int y)
@@ -386,7 +390,7 @@ void mouseWheel(int button, int dir, int x, int y)
  */
 int main(int argc, char** argv) 
 {
-	srand(time(NULL));
+	srand((unsigned int)time(NULL));
 
 	// Set up the window
 	glutInit(&argc, argv);
