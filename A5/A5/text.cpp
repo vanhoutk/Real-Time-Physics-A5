@@ -71,7 +71,7 @@ bool load_font_meta (const char* meta_file) {
 			fprintf (stderr, "ERROR: wrong number of tokens on line %i [%s]\n", lc, line);
 		}
 		glyph_widths[ascii_code] = prop_width;
-		glyph_y_offsets[ascii_code] = 1.0 - prop_height - prop_y_offset;
+		glyph_y_offsets[ascii_code] = 1.0f - prop_height - prop_y_offset;
 		//printf ("scanned code %i line %i\n", ascii_code, lc);
 		lc++;
 	}
@@ -265,8 +265,8 @@ void text_to_vbo (
 		atlas_row = (ascii_code - ' ') / ATLAS_COLS;
 		
 		// work out texture coordinates in atlas
-		s = atlas_col * (1.0 / ATLAS_COLS);
-		t = (atlas_row + 1) * (1.0 / ATLAS_ROWS);
+		s = atlas_col * (1.0f / ATLAS_COLS);
+		t = (atlas_row + 1) * (1.0f / ATLAS_ROWS);
 		
 		// work out position of glyphtriangle_width
 		x_pos = curr_x;
@@ -295,18 +295,18 @@ void text_to_vbo (
 		points_tmp[curr_index * 12 + 11] = y_pos;
 		
 		texcoords_tmp[curr_index * 12] = s;
-		texcoords_tmp[curr_index * 12 + 1] = 1.0 - t + 1.0 / ATLAS_ROWS;
+		texcoords_tmp[curr_index * 12 + 1] = 1.0f - t + 1.0f / ATLAS_ROWS;
 		texcoords_tmp[curr_index * 12 + 2] = s;
-		texcoords_tmp[curr_index * 12 + 3] = 1.0 - t;
-		texcoords_tmp[curr_index * 12 + 4] = s + 1.0 / ATLAS_COLS;
-		texcoords_tmp[curr_index * 12 + 5] = 1.0 - t;
+		texcoords_tmp[curr_index * 12 + 3] = 1.0f - t;
+		texcoords_tmp[curr_index * 12 + 4] = s + 1.0f / ATLAS_COLS;
+		texcoords_tmp[curr_index * 12 + 5] = 1.0f - t;
 		
-		texcoords_tmp[curr_index * 12 + 6] = s + 1.0 / ATLAS_COLS;
-		texcoords_tmp[curr_index * 12 + 7] = 1.0 - t;
-		texcoords_tmp[curr_index * 12 + 8] = s + 1.0 / ATLAS_COLS;
-		texcoords_tmp[curr_index * 12 + 9] = 1.0 - t + 1.0 / ATLAS_ROWS;
+		texcoords_tmp[curr_index * 12 + 6] = s + 1.0f / ATLAS_COLS;
+		texcoords_tmp[curr_index * 12 + 7] = 1.0f - t;
+		texcoords_tmp[curr_index * 12 + 8] = s + 1.0f / ATLAS_COLS;
+		texcoords_tmp[curr_index * 12 + 9] = 1.0f - t + 1.0f / ATLAS_ROWS;
 		texcoords_tmp[curr_index * 12 + 10] = s;
-		texcoords_tmp[curr_index * 12 + 11] = 1.0 - t + 1.0 / ATLAS_ROWS;
+		texcoords_tmp[curr_index * 12 + 11] = 1.0f - t + 1.0f / ATLAS_ROWS;
 		
 		// update record of bottom-right corner of text area
 		if (x_pos + (2.0f * scale_px) / font_viewport_width > *br_x) {

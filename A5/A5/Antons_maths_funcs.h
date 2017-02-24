@@ -916,6 +916,19 @@ bool operator == (const vec4 &lhs, const vec4 &rhs) {
 	return (lhs.v[0] == rhs.v[0]) && (lhs.v[1] == rhs.v[1]) && (lhs.v[2] == rhs.v[2]);
 }
 
+void multiplyQuat(versor &result, versor r, versor s)
+{
+	result.q[0] = s.q[0] * r.q[0] - s.q[1] * r.q[1] -
+		s.q[2] * r.q[2] - s.q[3] * r.q[3];
+	result.q[1] = s.q[0] * r.q[1] + s.q[1] * r.q[0] -
+		s.q[2] * r.q[3] + s.q[3] * r.q[2];
+	result.q[2] = s.q[0] * r.q[2] + s.q[1] * r.q[3] +
+		s.q[2] * r.q[0] - s.q[3] * r.q[1];
+	result.q[3] = s.q[0] * r.q[3] - s.q[1] * r.q[2] +
+		s.q[2] * r.q[1] + s.q[3] * r.q[0];
+	normalise(result); // Re-normalise
+}
+
 float quatMagnitude(versor v)
 {
 	float sum = v.q[0] * v.q[0] + v.q[1] * v.q[1] + v.q[2] * v.q[2] + v.q[3] * v.q[3];

@@ -22,7 +22,6 @@
 #include "Distance.h"
 #include "Mesh.h"
 #include "Model.h"
-#include "PlaneRotation.h"
 #include "RigidBody.h"
 #include "Shader_Functions.h"
 #include "text.h"
@@ -33,8 +32,6 @@ using namespace std;
 /*
  *	Globally defined variables and constants
  */
-//#define BUFFER_OFFSET(i) ((char *)NULL + (i))  // Macro for indexing vertex buffer
-
 #define NUM_MESHES   8
 #define NUM_SHADERS	 5
 #define NUM_TEXTURES 7
@@ -43,18 +40,17 @@ bool firstMouse = true;
 bool keys[1024];
 bool pause = false;
 Camera camera(vec3(0.0f, 0.0f, 4.0f));
+const GLuint numRigidBodies = 5;
 enum Meshes { PLANE_MESH, D6_MESH, SPHERE_MESH, D4_MESH, D8_MESH, D10_MESH, D12_MESH, D20_MESH};
 enum Shaders { SKYBOX, BASIC_COLOUR_SHADER, BASIC_TEXTURE_SHADER, LIGHT_SHADER, LIGHT_TEXTURE_SHADER };
 enum Textures { PLANE_TEXTURE, D4_TEXTURE, D6_TEXTURE, D8_TEXTURE, D10_TEXTURE, D12_TEXTURE, D20_TEXTURE};
 GLfloat cameraSpeed = 0.005f;
 GLuint lastX = 400, lastY = 300;
 GLuint mode = AABB;
-const GLuint numRigidBodies = 5;
 GLuint shaderProgramID[NUM_SHADERS];
 int screenWidth = 1000;
 int screenHeight = 800;
 int stringIDs[3];
-//Model planeModel;
 Mesh asteroid, boundingBox, sphereMesh, pyramidMesh, d4, d6, d8, d10, d12, d20;
 
 vec3 point1 = vec3(-1.0f, -1.0f, 0.577f);
@@ -92,7 +88,7 @@ void draw_text()
 	else
 		typeOSS << "Broad Phase Collision: None";
 
-	numOSS <<"Number of rigid bodies: " << numRigidBodies;
+	numOSS << "Number of rigid bodies: " << numRigidBodies;
 	
 	typeString = typeOSS.str();
 	numString = numOSS.str();
@@ -122,15 +118,13 @@ void display()
 	mat4 model = identity_mat4();
 	vec4 view_position = vec4(camera.Position.v[0], camera.Position.v[1], camera.Position.v[2], 0.0f);
 
-	
-
 	for (GLuint i = 0; i < numRigidBodies; i++)
 	{
 		rigidbodies[i].drawMesh(view, projection, view_position);
-		//if (mode == BOUNDING_SPHERES)
-		//	rigidbodies[i].drawBoundingSphere(view, projection);
-		//else if (mode == AABB)
-		//	rigidbodies[i].drawAABB(view, projection, &shaderProgramID[BASIC_COLOUR_SHADER]);
+		if (mode == BOUNDING_SPHERES)
+			rigidbodies[i].drawBoundingSphere(view, projection);
+		else if (mode == AABB)
+			rigidbodies[i].drawAABB(view, projection, &shaderProgramID[BASIC_COLOUR_SHADER]);
 	}
 	
 	boundingBox.drawLine(view, projection, model, vec4(1.0f, 1.0f, 0.0f, 1.0f));
@@ -202,12 +196,6 @@ void initialiseRigidBodies(bool indices)
 		GLfloat randomX1 = ((rand() % 8) - 4) / 5.0f;
 		GLfloat randomY1 = ((rand() % 8)) / 10.0f;
 		GLfloat randomZ1 = ((rand() % 8) - 4) / 5.0f;
-		/*GLfloat randomX2 = ((rand() % 100) - 50) / 100000.0f;*/
-		//GLfloat randomY2 = ((rand() % 100) - 100) / 100000.0f;
-		//GLfloat randomZ2 = ((rand() % 100) - 50) / 100000.0f;
-		//rigidBody.angularMomentum = vec4(randomX1, 0.0f, 0.0f, 0.0f);
-		//rigidBody.angularVelocity = vec4(0.0005f, 0.0f, 0.0f, 0.0f);
-		//rigidBody.linearMomentum = vec4(0.0f, randomY2, 0.0f, 0.0f);
 
 		rigidBody.position = vec4(randomX1, randomY1, randomZ1, 0.0f);
 
@@ -321,12 +309,6 @@ void init()
 	RigidBody d20rb = RigidBody(d20, 0.4f);
 	d20rb.addBoundingSphere(sphereMesh, green);
 	rigidbodies.push_back(d20rb);
-
-	//d4rb.meshColour = vec4(1.0f, 0.0f, 0.0f, 1.0f);
-	//rigidBody.scaleFactor = 0.2f;
-
-	//for (GLuint i = 0; i < numRigidBodies; i++)
-	//	rigidbodies.push_back(rigidBody);
 
 	initialiseRigidBodies(true);
 }
